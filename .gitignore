@@ -1,0 +1,62 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging/build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project outputs and generated files
+output/
+output_anc/
+results/
+logs/
+*.log
+*.png
+*.svg
+*.pdf
+
+# Conda env files
+.conda/
+
+# Local data caches / model checkpoints
+checkpoints/
+model_checkpoints/
+best_het_model.pt
+*.pt
+*.ckpt
+
+# Experiment artifacts
+wandb/
+mlruns/
+
+# Temporary files
+tmp/
+tmp.*
+*.tmp
