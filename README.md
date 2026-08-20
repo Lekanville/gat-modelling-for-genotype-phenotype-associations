@@ -61,7 +61,9 @@ GAT/
 ├── .gitignore
 ├── environment.yml
 ├── gat_run.sh
-├── gat_run_anc.sh
+├── gat_run_drug_phen.sh
+├── gat_run_var_phen_anc.sh
+├── gat_run_var_phen_random.sh
 ├── check.sh
 ├── README.md
 └── test.sh
@@ -85,36 +87,67 @@ Important modelling decisions:
 - repeated `variant-phenotype` rows are collapsed to one canonical edge per `(variant, phenotype)` pair using the strongest observed magnitude
 - this prevents ancestry-specific GWAS duplicates from inflating the graph and leaking across train/validation/test splits
 - ancestry-aware hold-out is applied conservatively: tiny ancestry groups are kept in training unless they are large enough to support a reliable validation/test split
+- for drug-side-effect prediction, edges are split by source drug so all edges from the same drug remain in a single fold; the script also reports the number of unique drugs in the train, validation, and test splits to make the partitioning transparent
 
 ---
 
 ## Training modes
-
-### 1. Random split mode
 open gat_run.sh
 
-Use this when no ancestry hold-out is requested:
+### 1. Variant-Phenotype Prediction using random split mode
+
+Use this when performing variant_phenotype predictions with no specific ancestry hold-out.
 
 ```bash
 python code/modelling.py \
   --input_directory data \
   --ancestry_test unspecified \
   --ancestry_val unspecified \
+  --prediction_type variant_phenotype \
   --output_directory output/output_random
 ```
+Example is given in "gat_run_var_phen_random.sh"
 
-### 2. Ancestry hold-out mode
+### 2. Variant-Phenotype Prediction Ancestry hold-out mode
 
-Use this for leave-one-ancestry-out evaluation:
+Use this when performing variant_phenotype predictions with ancestry leave-one-ancestry-out evaluation. 
 
 ```bash
 python code/modelling.py \
   --input_directory data \
   --ancestry_test EAS \
   --ancestry_val GME \
+  --prediction_type variant_phenotype \
   --output_directory output_anc
 ```
 Possible ancestry codes are EAS, OCE, SAS, EUR, AMR, GME, and AFR
+Example is given in "gat_run_var_phen_anc.sh"
+
+### 3. Drug-Phenotype (Side EFfect) Prediction Ancestry hold-out mode
+
+Use this for drug_phenotype prediction.
+
+```bash
+python code/modelling.py \
+  --input_directory data \
+  --ancestry_test unspecified \
+  --ancestry_val unspecified \
+  --prediction_type drug_side_effect \
+  --output_directory output_anc
+```
+Example is given in "gat_run_drug_phen.sh"
+
+### Supported prediction types
+
+The script supports three modes:
+
+```bash
+--prediction_type multi_task
+--prediction_type variant_phenotype
+--prediction_type drug_side_effect
+```
+
+The `drug_side_effect` setting activates the relation `('drug', 'causes', 'side_effect')`, which is the source of the train/validation/test drug counts reported during splitting.
 
 ---
 
@@ -126,7 +159,7 @@ The repository includes example job submission files:
 sbatch gat_run.sh
 ```
 
-The ancestry-specific script is intended for ancestry-aware out-of-distribution evaluation and uses the same model training pipeline with ancestry hold-out masks for variant-phenotype edges.
+The ancestry-specific script is intended for ancestry-aware out-of-distribution evaluation and uses the same model training pipeline with ancestry hold-out masks for variant-phenotype edges. The Slurm example for the drug-side-effect workflow explicitly sets `--prediction_type drug_side_effect` so the drug-to-side-effect graph is split and evaluated by source drug.
 
 ---
 
@@ -136,6 +169,8 @@ The script trains a heterogeneous graph neural network with:
 - HGT encoder
 - relation-specific link scorers
 - multi-task training for variant-phenotype and drug-side-effect relations
+- explicit support for `--prediction_type` selection of `multi_task`, `variant_phenotype`, or `drug_side_effect`
+- drug-phenotype modelling via the `('drug', 'causes', 'side_effect')` relation when `--prediction_type drug_side_effect` is selected
 - domain adversarial ancestry branch using phenotype ancestry distributions
 - early stopping based on validation loss
 
@@ -143,6 +178,7 @@ It reports training/validation/test metrics such as:
 - AUROC
 - average precision (AP)
 - task-specific losses
+- unique drug counts per train/validation/test split for drug-side-effect prediction
 
 ---
 

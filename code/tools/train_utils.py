@@ -40,6 +40,32 @@ def deduplicate_variant_phenotype_edges(df_variant_phenotype):
         print(f"Deduplicated variant-phenotype edges: {n_before - n_after} redundant rows removed.")
     return df
 
+
+def deduplicate_drug_side_effect_edges(df_drug_side_effect):
+    """Keep one strongest drug-side-effect edge per (drug, side_effect) pair."""
+    if df_drug_side_effect is None or df_drug_side_effect.empty:
+        return df_drug_side_effect
+
+    df = df_drug_side_effect.copy()
+    required = {'chembl_id', 'meddraCode'}
+    missing = required - set(df.columns)
+    if missing:
+        return df
+
+    df = df.dropna(subset=['chembl_id', 'meddraCode']).copy()
+    if 'llr_norm' in df.columns:
+        df['llr_norm'] = pd.to_numeric(df['llr_norm'], errors='coerce').fillna(0.0)
+
+    df['pair_key'] = df['chembl_id'].astype(str) + '|' + df['meddraCode'].astype(str)
+    if 'llr_norm' in df.columns:
+        df = df.sort_values(['pair_key', 'llr_norm'], ascending=[True, False], na_position='last')
+    n_before = len(df)
+    df = df.drop_duplicates(subset='pair_key', keep='first').drop(columns=['pair_key']).reset_index(drop=True)
+    n_after = len(df)
+    if n_after < n_before:
+        print(f"Deduplicated drug-side-effect edges: {n_before - n_after} redundant rows removed.")
+    return df
+
 def relation_batch(data, rel, mask_key='train_mask', num_neg=None):
     """Return positive edges and sampled negatives for a relation."""
     ei = data[rel].edge_index

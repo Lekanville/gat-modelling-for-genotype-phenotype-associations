@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=GAT_Run_anc
-#SBATCH --output=GAT_Run_anc.log
+#SBATCH --job-name=GAT_RUN_VAR_PHEN_RANDOM
+#SBATCH --output=GAT_RUN_VAR_PHEN_RANDOM.log
 #SBATCH --gpus=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
@@ -36,6 +36,7 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 export TF_CPP_MIN_LOG_LEVEL=1
 
 srun python code/modelling.py --input_directory data \
---ancestry_val GME \
---ancestry_test EAS \
---output_directory output/output_anc
+--ancestry_val unspecified \
+--ancestry_test unspecified \
+--prediction_type variant_phenotype \
+--output_directory output/output_var_phen_random

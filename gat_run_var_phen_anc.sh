@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=GAT_RUN_DRUG_PHEN
-#SBATCH --output=GAT_RUN_DRUG_PHEN.log
+#SBATCH --job-name=GAT_RUN_VAR_PHEN_ANC
+#SBATCH --output=GAT_RUN_VAR_PHEN_ANC.log
 #SBATCH --gpus=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
@@ -36,7 +36,7 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 export TF_CPP_MIN_LOG_LEVEL=1
 
 srun python code/modelling.py --input_directory data \
---ancestry_val unspecified \
---ancestry_test unspecified \
---prediction_type drug_side_effect \
---output_directory output/output_drug_phen
+--ancestry_val GME \
+--ancestry_test EAS \
+--prediction_type variant_phenotype \
+--output_directory output/output_var_phen_anc

@@ -72,16 +72,30 @@ def plot_training_history(history, output_dir):
     axes[0].legend()
     axes[0].grid(True, alpha=0.25)
 
-    ax2 = axes[0].twinx()
-    ax2.plot(history['epoch'], history['variant_ap'], color='tab:green', alpha=0.7, linestyle='--', label='variant AP')
-    ax2.plot(history['epoch'], history['drug_ap'], color='tab:purple', alpha=0.7, linestyle='--', label='drug AP')
-    ax2.set_ylabel('AP')
-    ax2.legend(loc='upper right')
+    alias_to_name = history.get('task_display_names', {})
+    task_aliases = history.get('task_aliases', [])
+    color_map = {
+        'variant_phenotype': 'tab:green',
+        'drug_side_effect': 'tab:purple',
+    }
+    for alias in task_aliases:
+        display = alias_to_name.get(alias, alias.replace('_', '-'))
+        color = color_map.get(alias, None)
+        axes[1].plot(
+            history['epoch'],
+            history[f'{alias}_auroc'],
+            label=f'{display} AUROC',
+            color=color,
+        )
+        axes[1].plot(
+            history['epoch'],
+            history[f'{alias}_ap'],
+            label=f'{display} AP',
+            color=color,
+            linestyle='--',
+            alpha=0.8,
+        )
 
-    axes[1].plot(history['epoch'], history['variant_auroc'], label='variant AUROC', color='tab:green')
-    axes[1].plot(history['epoch'], history['drug_auroc'], label='drug AUROC', color='tab:purple')
-    axes[1].plot(history['epoch'], history['variant_ap'], label='variant AP', color='tab:green', linestyle='--', alpha=0.7)
-    axes[1].plot(history['epoch'], history['drug_ap'], label='drug AP', color='tab:purple', linestyle='--', alpha=0.7)
     axes[1].set_ylabel('metric')
     axes[1].legend(loc='best', fontsize=8)
     axes[1].grid(True, alpha=0.25)

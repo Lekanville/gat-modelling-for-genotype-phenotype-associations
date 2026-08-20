@@ -25,6 +25,30 @@ def split_mask(num_edges, train=0.7, val=0.15):
     m_te = ~(m_tr | m_va)
     return m_tr, m_va, m_te
 
+
+def split_by_source_node(edge_index, train=0.7, val=0.15):
+    """Split edges so each source node appears in exactly one split."""
+    if edge_index.size(1) == 0:
+        empty = torch.zeros(0, dtype=torch.bool)
+        return empty, empty, empty
+
+    src_nodes = edge_index[0]
+    unique_src = torch.unique(src_nodes)
+    perm = unique_src[torch.randperm(unique_src.numel())]
+
+    n_src = perm.numel()
+    n_tr = int(train * n_src)
+    n_va = int(val * n_src)
+
+    src_tr = perm[:n_tr]
+    src_va = perm[n_tr:n_tr + n_va]
+    src_te = perm[n_tr + n_va:]
+
+    m_tr = torch.isin(src_nodes, src_tr)
+    m_va = torch.isin(src_nodes, src_va)
+    m_te = torch.isin(src_nodes, src_te)
+    return m_tr, m_va, m_te
+
 def ancestry_aware_split(df_variant_phenotype, target_test_ancestry, target_val_ancestry, min_group_size=5):
     """
     Split variant-phenotype associations by the canonical variant-phenotype pair,
