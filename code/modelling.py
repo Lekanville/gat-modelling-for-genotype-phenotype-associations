@@ -53,7 +53,8 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     Path(OUTPUT).mkdir(parents=True, exist_ok=True)
 
     # The nodes data
-    (df_variants, df_tissues, df_genes, df_ancestry, df_phenotype, df_meddra, df_pathway, df_drugs) = node_data(INPUT)
+    (df_variants, df_tissues, df_genes, df_ancestry, df_clinical_outcomes, df_pathway, df_drugs) = node_data(INPUT)
+    
 
     # The edge data 
     (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_phenotype_causes, df_drug_gene, df_gene_pathway, 
@@ -64,8 +65,8 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     df_drug_phenotype_causes = deduplicate_drug_side_effect_edges(df_drug_phenotype_causes)
 
     edge_dfs = (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_phenotype_causes, df_drug_gene, df_gene_pathway, 
-        df_gene_phenotype, df_gene_tissue, df_phenotype_phenotype_lin, df_phenotypes_phenotypes_ldsc, df_tissue_phenotype,
-            df_variant_ancestry, df_variant_phenotype) 
+                    df_gene_phenotype, df_gene_tissue, df_phenotype_phenotype_lin, df_phenotypes_phenotypes_ldsc, df_tissue_phenotype,
+                        df_variant_ancestry, df_variant_phenotype) 
 
 
     # Initialize Features & ID Mappings 
@@ -73,11 +74,11 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
 
     #Bbuilding the nides
     (variant_to_idx, tissue_to_idx, gene_to_idx, ancestry_to_idx, 
-        pheno_to_idx, meddra_to_idx, pathway_to_idx, drug_to_idx, data) = nodes_init(data, df_variants, df_tissues, df_genes, 
-                                                                   df_ancestry, df_phenotype, df_meddra, df_pathway, df_drugs)
+        clinical_outcomes_to_idx, pathway_to_idx, drug_to_idx, data) = nodes_init(data, df_variants, df_tissues, df_genes, 
+                                                                   df_ancestry, df_clinical_outcomes, df_pathway, df_drugs)
     
     mappings = (variant_to_idx, tissue_to_idx, gene_to_idx, ancestry_to_idx, 
-        pheno_to_idx, meddra_to_idx, pathway_to_idx, drug_to_idx)
+         clinical_outcomes_to_idx, pathway_to_idx, drug_to_idx)
     
     # Building the edges
     data = edges_init(data, edge_dfs, mappings)
@@ -86,21 +87,21 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
 
     # Build phenotype ancestry soft-label distributions from variant-phenotype edges
     # Each phenotype gets a probability vector over ancestry domains (sum=1).
-    (_, _, _, ancestry_to_idx, pheno_to_idx, _, _, _) = mappings
-    num_pheno = len(pheno_to_idx)
+    (_, _, _, ancestry_to_idx, clinical_outcomes_to_idx, _, _, _) = mappings
+    num_pheno = len(clinical_outcomes_to_idx)
     num_ancestry = len(ancestry_to_idx)
 
     # Count occurrences of ancestries per phenotype using per-variant edges
     pheno_anc_counts = defaultdict(lambda: [0] * num_ancestry)
     if 'target_ancestry' in df_variant_phenotype.columns:
         for _, row in df_variant_phenotype.iterrows():
-            pheno = row.get('target_phenotype') or row.get('target_hpo') or row.get('trait')
+            pheno = row.get('cui') or row.get('target_hpo') or row.get('trait')
             anc = row.get('target_ancestry')
             if pd.isna(pheno) or pd.isna(anc):
                 continue
             anc_code = str(anc).replace('ANC_', '')
-            if pheno in pheno_to_idx and anc_code in ancestry_to_idx:
-                ph_idx = pheno_to_idx[pheno]
+            if pheno in clinical_outcomes_to_idx and anc_code in ancestry_to_idx:
+                ph_idx = clinical_outcomes_to_idx[pheno]
                 anc_idx = ancestry_to_idx[anc_code]
                 pheno_anc_counts[ph_idx][anc_idx] += 1
 
@@ -118,19 +119,19 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     data['phenotype'].ancestry_dist = torch.tensor(pheno_dist, dtype=torch.float32)
 
     rel_variant = ('variant', 'associated_with', 'phenotype')
-    rel_drug = ('drug', 'causes', 'side_effect')
+    rel_drug = ('drug', 'causes', 'clinical_outcomes')
     relation_alias = {
         rel_variant: 'variant_phenotype',
-        rel_drug: 'drug_side_effect',
+        rel_drug: 'drug_clinical_outcomes',
     }
     relation_name = {
         rel_variant: 'variant-phenotype',
-        rel_drug: 'drug-side-effect',
+        rel_drug: 'drug-clinical_outcomes',
     }
 
     if PREDICTION_TYPE == 'variant_phenotype':
         supervised_relations = [rel_variant]
-    elif PREDICTION_TYPE == 'drug_side_effect':
+    elif PREDICTION_TYPE == 'drug_causes_clinical_outcomes':
         supervised_relations = [rel_drug]
     else:
         supervised_relations = [rel_variant, rel_drug]
@@ -141,7 +142,8 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
 
     if (ANCESTRY_TEST == 'unspecified') and (ANCESTRY_VAL == 'unspecified'):
         # Random splitting if no ancestry is specified
-        print("No ancestry specified for test or validation. Using random splits.")
+        if PREDICTION_TYPE == 'variant_phenotype':
+            print("No ancestry specified for test or validation. Using random splits.")
         for rel in supervised_relations:
             if rel in data.edge_types:
                 if rel == rel_drug:
@@ -152,11 +154,11 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
                         'test_unique_drugs': int(torch.unique(data[rel].edge_index[0, te]).numel()),
                     }
                     print(
-                        "Drug-side-effect source-stratified masks: "
+                        "Drug-causes-clinical-outcomes source-stratified masks: "
                         f"train={int(tr.sum())}, val={int(va.sum())}, test={int(te.sum())}"
                     )
                     print(
-                        "Drug-side-effect split drug counts: "
+                        "Drug-causes-clinical-outcomes split drug counts: "
                         f"train={drug_split_counts['train_unique_drugs']}, "
                         f"val={drug_split_counts['val_unique_drugs']}, "
                         f"test={drug_split_counts['test_unique_drugs']}"
@@ -170,7 +172,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
 
     else:
         # Ancestry-specific splitting for variant-phenotype; random split for drug-side_effect
-        print(f"Ancestry specified for test: {ANCESTRY_TEST}, validation: {ANCESTRY_VAL}. Using ancestry-aware splits for variant-phenotype, random splits for drug-side_effect.")
+        print(f"Ancestry specified for test: {ANCESTRY_TEST}, validation: {ANCESTRY_VAL}. Using ancestry-aware splits for variant-phenotype, random splits for drug-causes-clinical-outcomes.")
         for rel in supervised_relations:
             if rel in data.edge_types:
                 if rel == rel_variant:
@@ -191,11 +193,11 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
                         'test_unique_drugs': int(torch.unique(data[rel].edge_index[0, te]).numel()),
                     }
                     print(
-                        "Drug-side-effect source-stratified masks: "
+                        "Drug-causes-clinical-outcomes source-stratified masks: "
                         f"train={int(tr.sum())}, val={int(va.sum())}, test={int(te.sum())}"
                     )
                     print(
-                        "Drug-side-effect split drug counts: "
+                        "Drug-causes-clinical-outcomes split drug counts: "
                         f"train={drug_split_counts['train_unique_drugs']}, "
                         f"val={drug_split_counts['val_unique_drugs']}, "
                         f"test={drug_split_counts['test_unique_drugs']}"

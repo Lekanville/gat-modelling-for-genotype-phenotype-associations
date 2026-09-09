@@ -60,3 +60,5 @@ mlruns/
 tmp/
 tmp.*
 *.tmp
+
+# Data

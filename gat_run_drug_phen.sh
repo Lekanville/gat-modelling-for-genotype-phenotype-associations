@@ -38,5 +38,5 @@ export TF_CPP_MIN_LOG_LEVEL=1
 srun python code/modelling.py --input_directory data \
 --ancestry_val unspecified \
 --ancestry_test unspecified \
---prediction_type drug_side_effect \
+--prediction_type drug_causes_clinical_outcomes \
 --output_directory output/output_drug_phen
