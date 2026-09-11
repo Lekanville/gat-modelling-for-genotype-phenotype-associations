@@ -21,7 +21,20 @@ from tools.train_utils import (
     relation_batch,
     edge_loss_and_metrics,
 )
-from tools.hgt_gat import split_mask, split_by_source_node, ancestry_aware_split, HetModel
+from tools.scaling_utils import (
+    compute_variant_phenotype_magnitude,
+    scale_tissue_phenotype_edges,
+    scale_drug_causes_llr,
+)
+from tools.hgt_gat import (
+    split_mask,
+    split_by_source_node,
+    ancestry_aware_split,
+    build_source_split,
+    source_split_masks_from_mapping,
+    summarize_split,
+    HetModel,
+)
 from tools.inference_utils import (
     topk_pheno_for_variant,
     topk_pheno_for_drug,
@@ -63,6 +76,61 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
 
     df_variant_phenotype = deduplicate_variant_phenotype_edges(df_variant_phenotype)
     df_drug_phenotype_causes = deduplicate_drug_side_effect_edges(df_drug_phenotype_causes)
+
+    if (ANCESTRY_TEST == 'unspecified') and (ANCESTRY_VAL == 'unspecified'):
+        variant_split_labels, variant_split_map = build_source_split(df_variant_phenotype, 'rsid')
+        variant_tr_mask = torch.tensor(variant_split_labels == 'train', dtype=torch.bool)
+        variant_va_mask = torch.tensor(variant_split_labels == 'val', dtype=torch.bool)
+        variant_te_mask = torch.tensor(variant_split_labels == 'test', dtype=torch.bool)
+        use_ancestry_split = False
+    else:
+        variant_tr_mask, variant_va_mask, variant_te_mask = ancestry_aware_split(
+            df_variant_phenotype,
+            target_test_ancestry=ANCESTRY_TEST,
+            target_val_ancestry=ANCESTRY_VAL,
+        )
+        variant_split_map = {}
+        use_ancestry_split = True
+
+    if ('beta_unified' in df_variant_phenotype.columns):
+        split_labels = np.empty(len(df_variant_phenotype), dtype=object)
+        split_labels[variant_tr_mask.numpy()] = 'train'
+        split_labels[variant_va_mask.numpy()] = 'val'
+        split_labels[variant_te_mask.numpy()] = 'test'
+
+        df_variant_phenotype = df_variant_phenotype.copy()
+        df_variant_phenotype['split'] = split_labels
+        df_variant_phenotype = compute_variant_phenotype_magnitude(
+            df_variant_phenotype,
+            split_col='split',
+            train_label='train',
+        )
+
+    # if 'weight' in df_tissue_phenotype.columns:
+    #     tissue_tr_mask, tissue_va_mask, tissue_te_mask = split_mask(len(df_tissue_phenotype))
+    #     tissue_split_labels = np.empty(len(df_tissue_phenotype), dtype=object)
+    #     tissue_split_labels[tissue_tr_mask.numpy()] = 'train'
+    #     tissue_split_labels[tissue_va_mask.numpy()] = 'val'
+    #     tissue_split_labels[tissue_te_mask.numpy()] = 'test'
+
+    #     df_tissue_phenotype = df_tissue_phenotype.copy()
+    #     df_tissue_phenotype['split'] = tissue_split_labels
+    #     df_tissue_phenotype = scale_tissue_phenotype_edges(
+    #         df_tissue_phenotype,
+    #         split_col='split',
+    #         train_label='train',
+    #     )
+
+    drug_split_map = {}
+    if 'llr' in df_drug_phenotype_causes.columns:
+        drug_split_labels, drug_split_map = build_source_split(df_drug_phenotype_causes, 'chembl_id')
+        df_drug_phenotype_causes = df_drug_phenotype_causes.copy()
+        df_drug_phenotype_causes['split'] = drug_split_labels
+        df_drug_phenotype_causes = scale_drug_causes_llr(
+            df_drug_phenotype_causes,
+            split_col='split',
+            train_label='train',
+        )
 
     edge_dfs = (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_phenotype_causes, df_drug_gene, df_gene_pathway, 
                     df_gene_phenotype, df_gene_tissue, df_phenotype_phenotype_lin, df_phenotypes_phenotypes_ldsc, df_tissue_phenotype,
@@ -122,16 +190,16 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     rel_drug = ('drug', 'causes', 'clinical_outcomes')
     relation_alias = {
         rel_variant: 'variant_phenotype',
-        rel_drug: 'drug_clinical_outcomes',
+        rel_drug: 'drug_causes_side_effect',
     }
     relation_name = {
         rel_variant: 'variant-phenotype',
-        rel_drug: 'drug-clinical_outcomes',
+        rel_drug: 'drug-causes-side-effects',
     }
 
     if PREDICTION_TYPE == 'variant_phenotype':
         supervised_relations = [rel_variant]
-    elif PREDICTION_TYPE == 'drug_causes_clinical_outcomes':
+    elif PREDICTION_TYPE == 'drug_causes_side_effect':
         supervised_relations = [rel_drug]
     else:
         supervised_relations = [rel_variant, rel_drug]
@@ -141,67 +209,42 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     drug_split_counts = {}
 
     if (ANCESTRY_TEST == 'unspecified') and (ANCESTRY_VAL == 'unspecified'):
-        # Random splitting if no ancestry is specified
+        # Use the same canonical source split for both scaling and the model masks.
         if PREDICTION_TYPE == 'variant_phenotype':
-            print("No ancestry specified for test or validation. Using random splits.")
+            print("No ancestry specified for test or validation. Using source-aware random splits.")
         for rel in supervised_relations:
             if rel in data.edge_types:
-                if rel == rel_drug:
-                    tr, va, te = split_by_source_node(data[rel].edge_index)
-                    drug_split_counts = {
-                        'train_unique_drugs': int(torch.unique(data[rel].edge_index[0, tr]).numel()),
-                        'val_unique_drugs': int(torch.unique(data[rel].edge_index[0, va]).numel()),
-                        'test_unique_drugs': int(torch.unique(data[rel].edge_index[0, te]).numel()),
-                    }
-                    print(
-                        "Drug-causes-clinical-outcomes source-stratified masks: "
-                        f"train={int(tr.sum())}, val={int(va.sum())}, test={int(te.sum())}"
-                    )
-                    print(
-                        "Drug-causes-clinical-outcomes split drug counts: "
-                        f"train={drug_split_counts['train_unique_drugs']}, "
-                        f"val={drug_split_counts['val_unique_drugs']}, "
-                        f"test={drug_split_counts['test_unique_drugs']}"
-                    )
+                if rel == rel_variant:
+                    source_name_by_node = {int(v): k for k, v in variant_to_idx.items()}
+                    tr, va, te = source_split_masks_from_mapping(data[rel].edge_index, source_name_by_node, variant_split_map)
+                    summarize_split('Variant-phenotype', data[rel].edge_index, tr, va, te, source_name='variant')
                 else:
-                    e = data[rel].edge_index.size(1)
-                    tr, va, te = split_mask(e)
+                    source_name_by_node = {int(v): k for k, v in drug_to_idx.items()}
+                    tr, va, te = source_split_masks_from_mapping(data[rel].edge_index, source_name_by_node, drug_split_map)
+                    summarize_split('Drug-causes-side-effects', data[rel].edge_index, tr, va, te, source_name='drug')
                 data[rel].train_mask = tr
                 data[rel].val_mask = va
                 data[rel].test_mask = te
 
     else:
-        # Ancestry-specific splitting for variant-phenotype; random split for drug-side_effect
-        print(f"Ancestry specified for test: {ANCESTRY_TEST}, validation: {ANCESTRY_VAL}. Using ancestry-aware splits for variant-phenotype, random splits for drug-causes-clinical-outcomes.")
+        if use_ancestry_split:
+            # Ancestry-specific splitting for variant-phenotype; random split for drug-side_effect
+            print(f"Ancestry specified for test: {ANCESTRY_TEST}, validation: {ANCESTRY_VAL}. Using ancestry-aware splits for variant-phenotype, random splits for drug-causes-side-effects.")
+        else:
+            print("No ancestry specified for test or validation. Using random splits.")
+
         for rel in supervised_relations:
             if rel in data.edge_types:
                 if rel == rel_variant:
-                    # Ancestry-aware split for variant-phenotype
-                    tr, va, te = ancestry_aware_split(df_variant_phenotype, target_test_ancestry=ANCESTRY_TEST, target_val_ancestry=ANCESTRY_VAL)
+                    tr, va, te = variant_tr_mask, variant_va_mask, variant_te_mask
                     data[rel].train_mask = tr
                     data[rel].val_mask = va
                     data[rel].test_mask = te
-                    print(
-                        "Variant-phenotype final masks: "
-                        f"train={int(tr.sum())}, val={int(va.sum())}, test={int(te.sum())}"
-                    )
+                    summarize_split('Variant-phenotype', data[rel].edge_index, tr, va, te)
                 else:
-                    tr, va, te = split_by_source_node(data[rel].edge_index)
-                    drug_split_counts = {
-                        'train_unique_drugs': int(torch.unique(data[rel].edge_index[0, tr]).numel()),
-                        'val_unique_drugs': int(torch.unique(data[rel].edge_index[0, va]).numel()),
-                        'test_unique_drugs': int(torch.unique(data[rel].edge_index[0, te]).numel()),
-                    }
-                    print(
-                        "Drug-causes-clinical-outcomes source-stratified masks: "
-                        f"train={int(tr.sum())}, val={int(va.sum())}, test={int(te.sum())}"
-                    )
-                    print(
-                        "Drug-causes-clinical-outcomes split drug counts: "
-                        f"train={drug_split_counts['train_unique_drugs']}, "
-                        f"val={drug_split_counts['val_unique_drugs']}, "
-                        f"test={drug_split_counts['test_unique_drugs']}"
-                    )
+                    source_name_by_node = {int(v): k for k, v in drug_to_idx.items()}
+                    tr, va, te = source_split_masks_from_mapping(data[rel].edge_index, source_name_by_node, drug_split_map)
+                    summarize_split('Drug-causes-side-effects', data[rel].edge_index, tr, va, te, source_name='drug')
                     data[rel].train_mask = tr
                     data[rel].val_mask = va
                     data[rel].test_mask = te
