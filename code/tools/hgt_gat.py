@@ -1,5 +1,7 @@
 import torch
 import random
+import numpy as np
+import pandas as pd
 from torch import nn
 from torch.nn import functional as F
 from torch_geometric.nn import HGTConv, Linear
@@ -41,6 +43,94 @@ def ancestry_aware_split(df_variant_phenotype, target_test_ancestry, target_val_
         torch.tensor(val_mask.values, dtype=torch.bool),
         torch.tensor(test_mask.values, dtype=torch.bool)
     )
+
+
+def build_source_split(df, source_col, train=0.7, val=0.15, random_state=42):
+    """Create one canonical source-based split and return row labels plus source->split mapping."""
+    if df is None or df.empty or source_col not in df.columns:
+        empty = np.empty(0, dtype=object)
+        return empty, {}
+
+    unique_sources = pd.Series(df[source_col].dropna().astype(str).unique())
+    if unique_sources.empty:
+        labels = np.full(len(df), 'test', dtype=object)
+        return labels, {}
+
+    perm = unique_sources.sample(frac=1, random_state=random_state).to_numpy()
+    n_tr = int(len(perm) * train)
+    n_va = int(len(perm) * val)
+
+    train_sources = set(perm[:n_tr])
+    val_sources = set(perm[n_tr:n_tr + n_va])
+    test_sources = set(perm[n_tr + n_va:])
+
+    source_to_split = {}
+    for s in train_sources:
+        source_to_split[str(s)] = 'train'
+    for s in val_sources:
+        source_to_split[str(s)] = 'val'
+    for s in test_sources:
+        source_to_split[str(s)] = 'test'
+
+    labels = np.full(len(df), 'test', dtype=object)
+    src_series = df[source_col].astype(str)
+    labels[src_series.isin(train_sources)] = 'train'
+    labels[src_series.isin(val_sources)] = 'val'
+    return labels, source_to_split
+
+
+def source_split_masks_from_mapping(edge_index, source_name_by_node, source_to_split):
+    """Turn one canonical source->split map into train/val/test edge masks."""
+    if edge_index.size(1) == 0:
+        empty = torch.zeros(0, dtype=torch.bool)
+        return empty, empty, empty
+
+    edge_count = edge_index.size(1)
+    m_tr = torch.zeros(edge_count, dtype=torch.bool)
+    m_va = torch.zeros(edge_count, dtype=torch.bool)
+    m_te = torch.zeros(edge_count, dtype=torch.bool)
+
+    for i, src_idx in enumerate(edge_index[0].tolist()):
+        src_name = source_name_by_node.get(int(src_idx))
+        label = source_to_split.get(str(src_name), 'test')
+        if label == 'train':
+            m_tr[i] = True
+        elif label == 'val':
+            m_va[i] = True
+        else:
+            m_te[i] = True
+
+    return m_tr, m_va, m_te
+
+
+def summarize_split(label, edge_index, tr, va, te, source_name=None):
+    """Print a consistent train/val/test summary for a source-based split."""
+    counts = {
+        'train_edges': int(tr.sum()),
+        'val_edges': int(va.sum()),
+        'test_edges': int(te.sum()),
+    }
+    if source_name is not None:
+        unique_counts = {
+            'train_unique_sources': int(torch.unique(edge_index[0, tr]).numel()),
+            'val_unique_sources': int(torch.unique(edge_index[0, va]).numel()),
+            'test_unique_sources': int(torch.unique(edge_index[0, te]).numel()),
+        }
+        print(
+            f"{label} source-stratified masks: "
+            f"train={counts['train_edges']}, val={counts['val_edges']}, test={counts['test_edges']}"
+        )
+        print(
+            f"{label} split source counts: "
+            f"train={unique_counts['train_unique_sources']}, "
+            f"val={unique_counts['val_unique_sources']}, "
+            f"test={unique_counts['test_unique_sources']}"
+        )
+    else:
+        print(
+            f"{label} final masks: "
+            f"train={counts['train_edges']}, val={counts['val_edges']}, test={counts['test_edges']}"
+        )
 
 ############################################
 # HGT Encoder + Multi-relation Scorers #

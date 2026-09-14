@@ -27,8 +27,6 @@ from tools.scaling_utils import (
     scale_drug_causes_llr,
 )
 from tools.hgt_gat import (
-    split_mask,
-    split_by_source_node,
     ancestry_aware_split,
     build_source_split,
     source_split_masks_from_mapping,
@@ -52,8 +50,13 @@ parser.add_argument(
     '--prediction_type',
     type=str,
     default='multi_task',
-    choices=['multi_task', 'variant_phenotype', 'drug_side_effect'],
-    help='Select whether to train/evaluate variant-phenotype, drug-side-effect, or both tasks.'
+    choices=[
+        'multi_task',
+        'variant_phenotype',
+        'drug_treats_phenotype',
+        'drug_causes_side_effect',
+    ],
+    help='Select whether to train/evaluate variant-phenotype, drug repurposing, drug-side-effect, or the combined multi-task setup.'
 )
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -122,15 +125,33 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     #     )
 
     drug_split_map = {}
-    if 'llr' in df_drug_phenotype_causes.columns:
-        drug_split_labels, drug_split_map = build_source_split(df_drug_phenotype_causes, 'chembl_id')
-        df_drug_phenotype_causes = df_drug_phenotype_causes.copy()
-        df_drug_phenotype_causes['split'] = drug_split_labels
-        df_drug_phenotype_causes = scale_drug_causes_llr(
-            df_drug_phenotype_causes,
-            split_col='split',
-            train_label='train',
-        )
+    drug_source_df = pd.concat(
+        [
+            df_drug_phenotype_treats[['source']].rename(columns={'source': 'chembl_id'}),
+            df_drug_phenotype_causes[['chembl_id']],
+        ],
+        ignore_index=True,
+    )
+
+    if not drug_source_df.empty:
+        _, drug_split_map = build_source_split(drug_source_df, 'chembl_id')
+
+        if 'source' in df_drug_phenotype_treats.columns:
+            df_drug_phenotype_treats = df_drug_phenotype_treats.copy()
+            df_drug_phenotype_treats['split'] = df_drug_phenotype_treats['source'].astype(str).map(
+                {str(k): v for k, v in drug_split_map.items()}
+            ).fillna('test')
+
+        if 'llr' in df_drug_phenotype_causes.columns:
+            df_drug_phenotype_causes = df_drug_phenotype_causes.copy()
+            df_drug_phenotype_causes['split'] = df_drug_phenotype_causes['chembl_id'].astype(str).map(
+                {str(k): v for k, v in drug_split_map.items()}
+            ).fillna('test')
+            df_drug_phenotype_causes = scale_drug_causes_llr(
+                df_drug_phenotype_causes,
+                split_col='split',
+                train_label='train',
+            )
 
     edge_dfs = (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_phenotype_causes, df_drug_gene, df_gene_pathway, 
                     df_gene_phenotype, df_gene_tissue, df_phenotype_phenotype_lin, df_phenotypes_phenotypes_ldsc, df_tissue_phenotype,
@@ -187,22 +208,27 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     data['phenotype'].ancestry_dist = torch.tensor(pheno_dist, dtype=torch.float32)
 
     rel_variant = ('variant', 'associated_with', 'phenotype')
-    rel_drug = ('drug', 'causes', 'clinical_outcomes')
+    rel_drug_treats = ('drug', 'treats', 'phenotype')
+    rel_drug_causes = ('drug', 'causes', 'side_effect')
     relation_alias = {
         rel_variant: 'variant_phenotype',
-        rel_drug: 'drug_causes_side_effect',
+        rel_drug_treats: 'drug_treats_phenotype',
+        rel_drug_causes: 'drug_causes_side_effect',
     }
     relation_name = {
         rel_variant: 'variant-phenotype',
-        rel_drug: 'drug-causes-side-effects',
+        rel_drug_treats: 'drug-treats-phenotype',
+        rel_drug_causes: 'drug-causes-side-effects',
     }
 
     if PREDICTION_TYPE == 'variant_phenotype':
         supervised_relations = [rel_variant]
+    elif PREDICTION_TYPE == 'drug_treats_phenotype':
+        supervised_relations = [rel_drug_treats]
     elif PREDICTION_TYPE == 'drug_causes_side_effect':
-        supervised_relations = [rel_drug]
+        supervised_relations = [rel_drug_causes]
     else:
-        supervised_relations = [rel_variant, rel_drug]
+        supervised_relations = [rel_variant, rel_drug_treats, rel_drug_causes]
 
     print(f"Prediction type: {PREDICTION_TYPE}")
     print(f"Supervised relations: {[relation_name[r] for r in supervised_relations]}")
@@ -221,7 +247,8 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
                 else:
                     source_name_by_node = {int(v): k for k, v in drug_to_idx.items()}
                     tr, va, te = source_split_masks_from_mapping(data[rel].edge_index, source_name_by_node, drug_split_map)
-                    summarize_split('Drug-causes-side-effects', data[rel].edge_index, tr, va, te, source_name='drug')
+                    label_name = 'Drug-treats-phenotype' if rel == rel_drug_treats else 'Drug-causes-side-effect'
+                    summarize_split(label_name, data[rel].edge_index, tr, va, te, source_name='drug')
                 data[rel].train_mask = tr
                 data[rel].val_mask = va
                 data[rel].test_mask = te
@@ -244,7 +271,8 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
                 else:
                     source_name_by_node = {int(v): k for k, v in drug_to_idx.items()}
                     tr, va, te = source_split_masks_from_mapping(data[rel].edge_index, source_name_by_node, drug_split_map)
-                    summarize_split('Drug-causes-side-effects', data[rel].edge_index, tr, va, te, source_name='drug')
+                    label_name = 'Drug-treats-phenotype' if rel == rel_drug_treats else 'Drug-causes-side-effects'
+                    summarize_split(label_name, data[rel].edge_index, tr, va, te, source_name='drug')
                     data[rel].train_mask = tr
                     data[rel].val_mask = va
                     data[rel].test_mask = te
@@ -403,8 +431,9 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     ############################################
     if PREDICTION_TYPE in ['multi_task', 'variant_phenotype']:
         print("Top phenotypes for variant 0:", topk_pheno_for_variant(model, data, device, 0, k=5))
+    if PREDICTION_TYPE in ['multi_task', 'drug_treats_phenotype']:
         print("Top phenotypes for drug 0:", topk_pheno_for_drug(model, data, device, 0, k=5))
-    if PREDICTION_TYPE in ['multi_task', 'drug_side_effect']:
+    if PREDICTION_TYPE in ['multi_task', 'drug_causes_side_effect']:
         print("Top side effects for drug 0:", topk_side_effect_for_drug(model, data, device, 0, k=10))
         print("Polypharmacy risk (drug 0 + drug 1):", polypharmacy_risk(model, data, 0, 1, k=5))
 

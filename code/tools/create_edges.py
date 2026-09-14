@@ -58,12 +58,12 @@ def edges_init(data, edge_dfs, mappings):
 
     # --- 4a. Drug -> Phenotype (Treats) ---
     idx, w = process_edge_data(df_drug_phenotype_treats, 'source', 'cui', drug_to_idx, clinical_outcomes_to_idx)
-    data['drug', 'treats', 'clinical_outcomes'].edge_index = idx
+    data['drug', 'treats', 'phenotype'].edge_index = idx
 
     # --- 4b. Drug -> Phenotype (Causes) ---
     idx, w = process_edge_data(df_drug_phenotype_causes, 'chembl_id', 'cui', drug_to_idx, clinical_outcomes_to_idx, weight_col='llr_norm')
-    data['drug', 'causes', 'clinical_outcomes'].edge_index = idx
-    if w is not None: data['drug', 'causes', 'clinical_outcomes'].edge_weight = w
+    data['drug', 'causes', 'side_effect'].edge_index = idx
+    if w is not None: data['drug', 'causes', 'side_effect'].edge_weight = w
 
     # --- 5. Drug -> Gene ---
     idx, w = process_edge_data(df_drug_gene, 'source', 'target', drug_to_idx, gene_to_idx, weight_col='weight_norm')
