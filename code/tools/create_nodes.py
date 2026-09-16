@@ -135,7 +135,7 @@ def nodes_init(data, df_variants, df_tissues, df_genes, df_ancestry, df_clinical
     # --- CLINICAL OUTCOMES ---
     cui_codes = df_clinical_outcomes['cui'].tolist()
     clinical_outcomes_to_idx = {code: i for i, code in enumerate(cui_codes)}
-    cui_features_df = df_clinical_outcomes.drop(columns=['HPO_ID', 'cui', 'meddraCode', 'count', 'llr'])
+    cui_features_df = df_clinical_outcomes.drop(columns=['HPO_ID', 'cui', 'meddraCode', 'outcome', 'count', 'llr'])
     data['clinical_outcome'].x = torch.tensor(cui_features_df.values, dtype=torch.float32)
 
     # --- PATHWAY NODES ---
