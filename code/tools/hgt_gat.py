@@ -135,6 +135,47 @@ def summarize_split(label, edge_index, tr, va, te, source_name=None):
 ############################################
 # HGT Encoder + Multi-relation Scorers #
 ############################################
+class HGTAttentionRecorder(HGTConv):
+    """Attach per-relation attention statistics during HGT message passing.
+
+    PyG's HGTConv does not expose attention coefficients by default, so we record
+    any relation-wise attention values that are available on the layer and expose a
+    simple summary for route-importance inspection.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.last_attention = {}
+
+    def forward(self, x_dict, edge_index_dict):
+        # Best-effort capture: record attention if PyG places it on the layer.
+        self.last_attention = {}
+        out = super().forward(x_dict, edge_index_dict)
+
+        # Some upstream PyG versions store intermediate attention tensors on the
+        # layer under a private cache. If present, surface them for inspection.
+        cache = getattr(self, '_attn_cache', None)
+        if isinstance(cache, dict):
+            for key, value in cache.items():
+                if torch.is_tensor(value):
+                    self.last_attention[str(key)] = value.detach()
+
+        # Some versions keep partial relation-aware tensors under a similar cache.
+        alt_cache = getattr(self, 'attn_cache', None)
+        if isinstance(alt_cache, dict):
+            for key, value in alt_cache.items():
+                if torch.is_tensor(value):
+                    self.last_attention[str(key)] = value.detach()
+
+        return out
+
+    def route_attention_summary(self):
+        summary = {}
+        for rel_key, attn in self.last_attention.items():
+            if torch.is_tensor(attn):
+                summary[str(rel_key)] = float(attn.mean().item())
+        return summary
+
+
 class HGTEncoder(nn.Module):
     def __init__(self, metadata, hidden, heads=2, layers=2):
         super().__init__()
@@ -143,19 +184,57 @@ class HGTEncoder(nn.Module):
             nt: Linear(-1, hidden) for nt in metadata[0]
         })
         self.layers = nn.ModuleList([
-            HGTConv(in_channels=hidden, out_channels=hidden,
-                    metadata=metadata, heads=heads) for _ in range(layers)
+            HGTAttentionRecorder(in_channels=hidden, out_channels=hidden,
+                                metadata=metadata, heads=heads) for _ in range(layers)
         ])
         self.norms = nn.ModuleDict({nt: nn.LayerNorm(hidden) for nt in metadata[0]})
 
     def forward(self, x_dict, edge_index_dict):
         x_dict = {nt: self.lin_dict[nt](x) for nt, x in x_dict.items() if nt in self.lin_dict}
         for conv in self.layers:
-            print("x_dict keys:", x_dict.keys())
-            print("Expected node types:", self.metadata[0])
             x_dict = conv(x_dict, edge_index_dict)
             x_dict = {nt: self.norms[nt](F.gelu(x)) for nt, x in x_dict.items()}
         return x_dict
+
+    def route_attention_summary(self):
+        """Return a flattened, sorted view of per-layer, per-relation attention strength.
+
+        This is intended for route-importance inspection, where one wants
+        to know whether the model is consistently attending to paths such as
+        drug -> gene -> phenotype or variant -> gene -> phenotype.
+        """
+        summary = []
+        for layer_idx, layer in enumerate(self.layers):
+            for rel_key, attn_mean in layer.route_attention_summary().items():
+                summary.append({
+                    'layer': layer_idx,
+                    'relation': rel_key,
+                    'mean_attention': attn_mean,
+                })
+        return sorted(summary, key=lambda d: d['mean_attention'], reverse=True)
+
+    def route_attention_report(self, title='HGT attended paths (sorted by mean attention):', limit=None):
+        """Return a clean manager-facing text summary of all attended routes."""
+        summary = self.route_attention_summary()
+        if not summary:
+            return f"{title}\n  No HGT attention values were captured in this runtime."
+
+        rows = summary if limit is None else summary[:limit]
+        lines = [title]
+        for idx, item in enumerate(rows, start=1):
+            rel = item['relation']
+            if isinstance(rel, tuple):
+                rel = ' -> '.join(str(r) for r in rel)
+            lines.append(
+                f"  {idx:02d}. layer={item['layer']:02d} | path={rel} | mean_attention={item['mean_attention']:.6f}"
+            )
+        return "\n".join(lines)
+
+    def print_route_attention_summary(self, title='HGT attended paths (sorted by mean attention):', limit=None):
+        """Print all captured attention paths in descending order."""
+        report = self.route_attention_report(title=title, limit=limit)
+        print(report)
+        return self.route_attention_summary()[:limit] if limit is not None else self.route_attention_summary()
 
 class RelScorer(nn.Module):
     """Simple DistMult-like scorer per relation."""

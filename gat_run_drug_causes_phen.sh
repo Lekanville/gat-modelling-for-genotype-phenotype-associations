@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=GAT_RUN_DRUG_PHEN
-#SBATCH --output=GAT_RUN_DRUG_PHEN.log
+#SBATCH --job-name=GAT_RUN_DRUG_CAUSES_PHEN
+#SBATCH --output=GAT_RUN_DRUG_CAUSES_PHEN.log
 #SBATCH --gpus=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
@@ -38,5 +38,5 @@ export TF_CPP_MIN_LOG_LEVEL=1
 srun python code/modelling.py --input_directory data \
 --ancestry_val unspecified \
 --ancestry_test unspecified \
---prediction_type drug_causes_clinical_outcomes \
---output_directory output/output_drug_phen
+--prediction_type drug_causes_side_effect \
+--output_directory output/output_drug_causes_phen

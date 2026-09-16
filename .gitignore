@@ -37,6 +37,7 @@ output/
 output_anc/
 results/
 logs/
+keep/
 *.log
 *.png
 *.svg

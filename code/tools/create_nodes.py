@@ -78,7 +78,7 @@ from tools.smiles_features import smiles_to_feature_vector
 
 #     return (variant_to_idx, tissue_to_idx, gene_to_idx, ancestry_to_idx, pheno_to_idx, meddra_to_idx, pathway_to_idx, drug_to_idx, data)
 
-def nodes_init(data, df_variants, df_tissues, df_genes, df_ancestry, df_phenotype, df_meddra, df_pathway, df_drugs):
+def nodes_init(data, df_variants, df_tissues, df_genes, df_ancestry, df_clinical_outcomes, df_pathway, df_drugs):
     scaler = MinMaxScaler()
     
     # Initialize Features & ID Mappings                  
@@ -120,17 +120,23 @@ def nodes_init(data, df_variants, df_tissues, df_genes, df_ancestry, df_phenotyp
     num_ancestry_nodes = len(ancestry_ids)
     data['ancestry'].x = torch.eye(num_ancestry_nodes, dtype=torch.float32)
 
-    # --- PHENOTYPE NODES ---
-    pheno_ids = df_phenotype['HPO_ID'].tolist()
-    pheno_to_idx = {pid: i for i, pid in enumerate(pheno_ids)}
-    pheno_features_df = df_phenotype.drop(columns=['HPO_ID', 'phenotype'])
-    data['phenotype'].x = torch.tensor(pheno_features_df.values, dtype=torch.float32)
+    # # --- PHENOTYPE NODES ---
+    # pheno_ids = df_phenotype['HPO_ID'].tolist()
+    # pheno_to_idx = {pid: i for i, pid in enumerate(pheno_ids)}
+    # pheno_features_df = df_phenotype.drop(columns=['HPO_ID', 'phenotype'])
+    # data['phenotype'].x = torch.tensor(pheno_features_df.values, dtype=torch.float32)
 
-    # --- SIDE_EFFECTS NODES ---
-    meddra_codes = df_meddra['meddraCode'].tolist()
-    meddra_to_idx = {code: i for i, code in enumerate(meddra_codes)}
-    meddra_features_df = df_meddra.drop(columns=['count', 'llr'])
-    data['side_effect'].x = torch.tensor(meddra_features_df.values, dtype=torch.float32)
+    # # --- SIDE_EFFECTS NODES ---
+    # meddra_codes = df_meddra['meddraCode'].tolist()
+    # meddra_to_idx = {code: i for i, code in enumerate(meddra_codes)}
+    # meddra_features_df = df_meddra.drop(columns=['count', 'llr'])
+    # data['side_effect'].x = torch.tensor(meddra_features_df.values, dtype=torch.float32)
+
+    # --- CLINICAL OUTCOMES ---
+    cui_codes = df_clinical_outcomes['cui'].tolist()
+    clinical_outcomes_to_idx = {code: i for i, code in enumerate(cui_codes)}
+    cui_features_df = df_clinical_outcomes.drop(columns=['HPO_ID', 'cui', 'meddraCode', 'count', 'llr'])
+    data['clinical_outcome'].x = torch.tensor(cui_features_df.values, dtype=torch.float32)
 
     # --- PATHWAY NODES ---
     pathway_ids = df_pathway['Pathway_ID'].tolist()
@@ -158,4 +164,4 @@ def nodes_init(data, df_variants, df_tissues, df_genes, df_ancestry, df_phenotyp
     drug_feature_list = [smiles_to_feature_vector(s) for s in df_drugs['smiles']]
     data['drug'].x = torch.tensor(np.array(drug_feature_list), dtype=torch.float32)
 
-    return (variant_to_idx, tissue_to_idx, gene_to_idx, ancestry_to_idx, pheno_to_idx, meddra_to_idx, pathway_to_idx, drug_to_idx, data)
+    return (variant_to_idx, tissue_to_idx, gene_to_idx, ancestry_to_idx, clinical_outcomes_to_idx, pathway_to_idx, drug_to_idx, data)

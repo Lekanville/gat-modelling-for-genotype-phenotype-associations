@@ -399,6 +399,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
                     f"AUROC={metrics[rel_key]['auroc']:.3f} AP={metrics[rel_key]['ap']:.3f} "
                 )
             print(msg)
+            model.encoder.print_route_attention_summary(limit=20)
 
         if val_loss_total < best_val_loss - min_delta:
             best_val_loss = val_loss_total
@@ -424,7 +425,10 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     test = evaluate('test_mask')
     print(f"VAL ({PREDICTION_TYPE}):", val)
     print(f"TEST ({PREDICTION_TYPE}):", test)
-
+    print("\n" + model.encoder.route_attention_report(
+        title='Final HGT attended paths (top-ranked routes after training):',
+        limit=20,
+    ))
 
     ############################################
     # Inference utilities                   #
