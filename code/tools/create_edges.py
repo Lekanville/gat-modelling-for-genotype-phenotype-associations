@@ -78,7 +78,7 @@ def edges_init(data, edge_dfs, mappings):
     data['gene', 'belongs_to', 'pathway'].edge_index = idx
 
     # --- 7. Gene -> Phenotype ---
-    idx, w = process_edge_data(df_gene_phenotype, 'source', 'target', gene_to_idx, clinical_outcomes_to_idx, weight_col='weight')
+    idx, w = process_edge_data(df_gene_phenotype, 'source', 'cui', gene_to_idx, clinical_outcomes_to_idx, weight_col='weight')
     data['gene', 'associated_with', 'phenotype'].edge_index = idx
     if w is not None: data['gene', 'associated_with', 'phenotype'].edge_weight = w
 

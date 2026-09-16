@@ -174,13 +174,25 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     print("All 8 Node Feature Matrices successfully loaded!")
     audit_and_visualize_heterodata(data, OUTPUT)
 
-    # Build phenotype ancestry soft-label distributions from variant-phenotype edges
-    # Each phenotype gets a probability vector over ancestry domains (sum=1).
-    (_, _, _, ancestry_to_idx, clinical_outcomes_to_idx, _, _, _) = mappings
-    num_pheno = len(clinical_outcomes_to_idx)
+    # Build ancestry targets from the phenotype subset used in the variant-phenotype task.
+    # The full clinical_outcome tensor still needs a full-length vector for indexing, but
+    # the ancestral prior should be defined only on phenotype nodes that actually appear
+    # in the variant-phenotype edges.
+    (_, _, _, ancestry_to_idx, clinical_outcomes_to_idx, _, _) = mappings
     num_ancestry = len(ancestry_to_idx)
+    phenotype_idx = set()
 
-    # Count occurrences of ancestries per phenotype using per-variant edges
+    if 'target_ancestry' in df_variant_phenotype.columns:
+        for _, row in df_variant_phenotype.iterrows():
+            pheno = row.get('cui') or row.get('target_hpo') or row.get('trait')
+            anc = row.get('target_ancestry')
+            if pd.isna(pheno) or pd.isna(anc):
+                continue
+            if str(pheno) in clinical_outcomes_to_idx:
+                phenotype_idx.add(clinical_outcomes_to_idx[str(pheno)])
+
+    phenotype_idx = sorted(phenotype_idx)
+    phenotype_set = set(phenotype_idx)
     pheno_anc_counts = defaultdict(lambda: [0] * num_ancestry)
     if 'target_ancestry' in df_variant_phenotype.columns:
         for _, row in df_variant_phenotype.iterrows():
@@ -189,23 +201,31 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
             if pd.isna(pheno) or pd.isna(anc):
                 continue
             anc_code = str(anc).replace('ANC_', '')
-            if pheno in clinical_outcomes_to_idx and anc_code in ancestry_to_idx:
-                ph_idx = clinical_outcomes_to_idx[pheno]
+            if str(pheno) in clinical_outcomes_to_idx and anc_code in ancestry_to_idx:
+                ph_idx = clinical_outcomes_to_idx[str(pheno)]
                 anc_idx = ancestry_to_idx[anc_code]
-                pheno_anc_counts[ph_idx][anc_idx] += 1
+                if ph_idx in phenotype_set:
+                    pheno_anc_counts[ph_idx][anc_idx] += 1
 
-    # Convert counts to probability distributions; use uniform prior when no observations
-    pheno_dist = np.zeros((num_pheno, num_ancestry), dtype=np.float32)
-    for p_idx in range(num_pheno):
+    phenotype_dist = np.full((len(phenotype_idx), num_ancestry), 1.0 / float(num_ancestry), dtype=np.float32)
+    for row_idx, p_idx in enumerate(phenotype_idx):
         counts = np.array(pheno_anc_counts.get(p_idx, [0] * num_ancestry), dtype=np.float32)
         s = counts.sum()
-        if s == 0:
-            pheno_dist[p_idx] = np.ones(num_ancestry, dtype=np.float32) / float(num_ancestry)
-        else:
-            pheno_dist[p_idx] = counts / s
+        if s > 0:
+            phenotype_dist[row_idx] = counts / s
 
-    # Attach soft-label distributions to HeteroData for domain adversary training
-    data['phenotype'].ancestry_dist = torch.tensor(pheno_dist, dtype=torch.float32)
+    full_pheno_dist = np.full((len(clinical_outcomes_to_idx), num_ancestry), 1.0 / float(num_ancestry), dtype=np.float32)
+    for row_idx, p_idx in enumerate(phenotype_idx):
+        full_pheno_dist[p_idx] = phenotype_dist[row_idx]
+
+    # Attach soft-label distributions to HeteroData for domain adversary training.
+    # Only phenotype nodes in the variant-phenotype task receive ancestry targets.
+    data['clinical_outcome'].ancestry_dist = torch.tensor(full_pheno_dist, dtype=torch.float32)
+    phenotype_mask = torch.tensor(
+        [idx in phenotype_set for idx in range(len(clinical_outcomes_to_idx))],
+        dtype=torch.bool,
+        device=device,
+    )
 
     rel_variant = ('variant', 'associated_with', 'phenotype')
     rel_drug_treats = ('drug', 'treats', 'phenotype')
@@ -346,13 +366,17 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
 
         use_domain_adv = rel_variant in supervised_relations
         if use_domain_adv:
-            # Domain adversarial regularization applies only when phenotype task is active.
+            # Domain adversarial regularization applies only to phenotype nodes in the
+            # variant-phenotype supervision task, not to all clinical outcomes.
             lam = lambda_grl_schedule(epoch)
-            phen_z = z['phenotype']
-            dom_logits = model.domain_adv(phen_z, lam)
-            dom_target = data['phenotype'].ancestry_dist
-            dom_log_probs = F.log_softmax(dom_logits, dim=1)
-            dom_loss = F.kl_div(dom_log_probs, dom_target, reduction='batchmean')
+            if phenotype_mask.any():
+                phen_z = z['clinical_outcome'][phenotype_mask]
+                dom_target = data['clinical_outcome'].ancestry_dist[phenotype_mask]
+                dom_logits = model.domain_adv(phen_z, lam)
+                dom_log_probs = F.log_softmax(dom_logits, dim=1)
+                dom_loss = F.kl_div(dom_log_probs, dom_target, reduction='batchmean')
+            else:
+                dom_loss = torch.tensor(0.0, device=device)
         else:
             dom_loss = torch.tensor(0.0, device=device)
 

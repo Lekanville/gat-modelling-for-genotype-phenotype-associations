@@ -19,6 +19,16 @@ HP:0001513,Pancreas,Obesity,0.55759,0.2537,0.086903,C0028754
 HP:0001513,Whole_Blood,Obesity,0.95246,0.0212,0.0,C0028754
 HP:0001513,Brain_Hypothalamus,Obesity,0.11643,0.9339,0.341145,C0028754
 HP:0001513,Small_Intestine_Terminal_Ileum,Obesity,0.94451,0.0248,0.001346,C0028754
+HP:0002511,Adipose_Subcutaneous,Alzheimer's Disease,0.49779,0.303,0.040559,C1863051
+HP:0002511,Artery_Aorta,Alzheimer's Disease,0.95771,0.0188,0.00234,C1863051
+HP:0002511,Heart_Left_Ventricle,Alzheimer's Disease,0.99672,0.0014,0.0,C1863051
+HP:0002511,Kidney_Cortex,Alzheimer's Disease,0.87429,0.0583,0.007652,C1863051
+HP:0002511,Liver,Alzheimer's Disease,0.87114,0.0599,0.007867,C1863051
+HP:0002511,Muscle_Skeletal,Alzheimer's Disease,0.97288,0.0119,0.001412,C1863051
+HP:0002511,Pancreas,Alzheimer's Disease,0.90687,0.0425,0.005527,C1863051
+HP:0002511,Whole_Blood,Alzheimer's Disease,3.6528e-08,7.4374,1.0,C1863051
+HP:0002511,Brain_Hypothalamus,Alzheimer's Disease,0.061731,1.2095,0.162466,C1863051
+HP:0002511,Small_Intestine_Terminal_Ileum,Alzheimer's Disease,0.03772,1.4234,0.191232,C1863051
 HP:0003074,Adipose_Subcutaneous,Hyperglycemia,0.3586,0.4454,0.696694,C0020456
 HP:0003074,Artery_Aorta,Hyperglycemia,0.23701,0.6252,1.0,C0020456
 HP:0003074,Heart_Left_Ventricle,Hyperglycemia,0.67617,0.1699,0.23195,C0020456
