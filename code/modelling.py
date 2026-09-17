@@ -59,12 +59,14 @@ parser.add_argument(
     help='Select whether to train/evaluate variant-phenotype, drug repurposing, drug-side-effect, or the combined multi-task setup.'
 )
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-torch.manual_seed(42)
-random.seed(42) 
 
 
 def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    torch.manual_seed(42)
+    random.seed(42)
+    np.random.seed(42)
 
     Path(OUTPUT).mkdir(parents=True, exist_ok=True)
 
@@ -298,7 +300,6 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
                     data[rel].test_mask = te
 
     EMBED_DIM = 128 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = data.to(device)
     assert set(data.metadata()[0]) == set(data.x_dict.keys()), \
                 f"Mismatch! Metadata expects {data.metadata()[0]}, but x_dict has {list(data.x_dict.keys())}"
