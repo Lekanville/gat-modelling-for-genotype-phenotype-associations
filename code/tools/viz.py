@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -6,9 +7,29 @@ matplotlib.use('Agg')
 # import networkx as nx
 # import numpy as np
 
-def audit_and_visualize_heterodata(data, output_dir):
+
+def _parse_relation_tokens(value):
+    if value is None or value == '':
+        return set()
+    raw = str(value).strip()
+    if not raw or raw.lower() in {'none', 'all'}:
+        return set()
+
+    raw = raw.replace(';', '|').replace('-', ',')
+    groups = [group.strip() for group in raw.split('|') if group.strip()]
+
+    out = set()
+    for group in groups:
+        tokens = [token.strip().strip("()[]'\"") for token in group.split(',') if token.strip()]
+        if len(tokens) == 3:
+            out.add(tuple(tokens))
+    return out
+
+
+def audit_and_visualize_heterodata(data, output_dir, ignored_relations='', original_edge_counts=None):
+    os.makedirs(output_dir, exist_ok=True)
     print("=== HETEROGENEOUS GRAPH AUDIT REPORT ===")
-    
+
     # 1. Print Node Tensor Shapes
     print("\n[Node Feature Matrices]")
     node_stats = {}
@@ -27,14 +48,36 @@ def audit_and_visualize_heterodata(data, output_dir):
         num_edges = data[edge_type].edge_index.shape[1]
         has_weight = hasattr(data[edge_type], 'edge_weight')
         has_attr = hasattr(data[edge_type], 'edge_attr')
-        
+
         edge_label = f"{src} -> {rel} -> {dst}"
         edge_names.append(edge_label)
         edge_counts.append(num_edges)
-        
+
         weight_str = f"| Weights: Yes" if has_weight else "| Weights: No"
         attr_str = f"| Attr: Yes" if has_attr else ""
         print(f"  - {edge_label:<45}: {num_edges} edges {weight_str} {attr_str}")
+
+    ignored_set = _parse_relation_tokens(ignored_relations)
+    if ignored_set and original_edge_counts is not None:
+        print("\n[Ignored Edge Relations]")
+        ignored_labels = []
+        ignored_values = []
+        for rel, num_edges in sorted(original_edge_counts.items(), key=lambda x: str(x[0])):
+            if tuple(rel) in ignored_set and tuple(rel) not in {tuple(edge) for edge in data.edge_types}:
+                label = f"{rel[0]} -> {rel[1]} -> {rel[2]}"
+                ignored_labels.append(label)
+                ignored_values.append(num_edges)
+                print(f"  - {label:<45}: {num_edges} edges | Status: Ignored")
+
+        if ignored_labels:
+            plt.figure(figsize=(12, 6))
+            sns.barplot(x=ignored_values, y=ignored_labels, hue=ignored_labels, palette="Reds", legend=False)
+            plt.xscale("log")
+            plt.title("Ignored Edge Relations")
+            plt.xlabel("Original Number of Edges (Log Scale)")
+            plt.tight_layout()
+            plt.savefig(f"{output_dir}/audit_ignored_edges.png")
+            plt.close()
 
     # --- VISUALIZATION 1: Node Count Bar Plot ---
     plt.figure(figsize=(10, 5))
@@ -49,14 +92,17 @@ def audit_and_visualize_heterodata(data, output_dir):
     plt.close()
 
     # --- VISUALIZATION 2: Edge Density Bar Plot ---
-    plt.figure(figsize=(12, 6))
-    sns.barplot(x=edge_counts, y=edge_names, hue=edge_names, palette="magma", legend=False)
-    plt.xscale("log")
-    plt.title("Log-Scale Count of Edges Across Relational Types")
-    plt.xlabel("Number of Edges (Log Scale)")
-    plt.tight_layout()
-    plt.savefig(f"{output_dir}/audit_edge_counts.png")
-    plt.close()
+    plot_labels = edge_names + [f"IGNORED: {rel[0]} -> {rel[1]} -> {rel[2]}" for rel in sorted(ignored_set, key=lambda x: str(x)) if tuple(rel) not in {tuple(edge) for edge in data.edge_types}]
+    plot_counts = edge_counts + [original_edge_counts.get(tuple(rel), 0) for rel in sorted(ignored_set, key=lambda x: str(x)) if tuple(rel) not in {tuple(edge) for edge in data.edge_types}]
+    if plot_labels:
+        plt.figure(figsize=(12, 6))
+        sns.barplot(x=plot_counts, y=plot_labels, hue=plot_labels, palette="magma", legend=False)
+        plt.xscale("log")
+        plt.title("Log-Scale Count of Included and Ignored Edge Relations")
+        plt.xlabel("Number of Edges (Log Scale)")
+        plt.tight_layout()
+        plt.savefig(f"{output_dir}/audit_edge_counts.png")
+        plt.close()
 
     print(f"\nVisualizations successfully saved to {output_dir}/")
 

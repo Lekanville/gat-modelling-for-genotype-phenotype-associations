@@ -39,4 +39,7 @@ srun python code/modelling.py --input_directory data \
 --ancestry_val unspecified \
 --ancestry_test unspecified \
 --prediction_type variant_phenotype \
---output_directory output/output_var_phen_random
+--output_directory output/output_var_phen_random \
+# --focus_test_relation True
+
+# --ignore_relations "drug,treats,clinical_outcome" \

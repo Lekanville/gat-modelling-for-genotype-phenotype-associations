@@ -1,3 +1,4 @@
+import math
 import torch
 import random
 import numpy as np
@@ -6,7 +7,8 @@ from torch import nn
 from torch.nn import functional as F
 from torch_geometric.nn import HGTConv, Linear
 from torch_geometric.loader import NeighborLoader
-from torch_geometric.utils import negative_sampling
+from torch_geometric.nn.conv.hgt_conv import construct_bipartite_edge_index
+from torch_geometric.utils import negative_sampling, softmax
 from torchmetrics.classification import BinaryAUROC, BinaryAveragePrecision
 
 torch.manual_seed(42)
@@ -136,37 +138,95 @@ def summarize_split(label, edge_index, tr, va, te, source_name=None):
 # HGT Encoder + Multi-relation Scorers #
 ############################################
 class HGTAttentionRecorder(HGTConv):
-    """Attach per-relation attention statistics during HGT message passing.
+    """Capture per-relation attention statistics from the HGT message-passing path.
 
-    PyG's HGTConv does not expose attention coefficients by default, so we record
-    any relation-wise attention values that are available on the layer and expose a
-    simple summary for route-importance inspection.
+    PyG's built-in HGTConv does not expose attention tensors publicly. We therefore
+    reproduce its message-passing path and store the message attention for each
+    relation block so that route importance can be inspected by source/destination
+    relation and by layer.
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.last_attention = {}
+        self._last_alpha = None
+        self._relation_ranges = {}
+
+    def _compute_relation_ranges(self, edge_index_dict):
+        ranges = {}
+        offset = 0
+        for rel in edge_index_dict.keys():
+            num_edges = edge_index_dict[rel].size(1)
+            ranges[rel] = (offset, offset + num_edges)
+            offset += num_edges
+        self._relation_ranges = ranges
 
     def forward(self, x_dict, edge_index_dict):
-        # Best-effort capture: record attention if PyG places it on the layer.
         self.last_attention = {}
-        out = super().forward(x_dict, edge_index_dict)
+        self._last_alpha = None
+        self._compute_relation_ranges(edge_index_dict)
 
-        # Some upstream PyG versions store intermediate attention tensors on the
-        # layer under a private cache. If present, surface them for inspection.
-        cache = getattr(self, '_attn_cache', None)
-        if isinstance(cache, dict):
-            for key, value in cache.items():
-                if torch.is_tensor(value):
-                    self.last_attention[str(key)] = value.detach()
+        out_channels = self.out_channels
+        heads = self.heads
+        dim = out_channels // heads
 
-        # Some versions keep partial relation-aware tensors under a similar cache.
-        alt_cache = getattr(self, 'attn_cache', None)
-        if isinstance(alt_cache, dict):
-            for key, value in alt_cache.items():
-                if torch.is_tensor(value):
-                    self.last_attention[str(key)] = value.detach()
+        k_dict, q_dict, v_dict, out_dict = {}, {}, {}, {}
+        kqv_dict = self.kqv_lin(x_dict)
+        for key, val in kqv_dict.items():
+            k, q, v = torch.tensor_split(val, 3, dim=1)
+            k_dict[key] = k.view(-1, heads, dim)
+            q_dict[key] = q.view(-1, heads, dim)
+            v_dict[key] = v.view(-1, heads, dim)
 
-        return out
+        q, dst_offset = self._cat(q_dict)
+        k, v, src_offset = self._construct_src_node_feat(
+            k_dict, v_dict, edge_index_dict)
+
+        edge_index, edge_attr = construct_bipartite_edge_index(
+            edge_index_dict,
+            src_offset,
+            dst_offset,
+            edge_attr_dict=self.p_rel,
+            num_nodes=k.size(0),
+        )
+
+        out = self.propagate(edge_index, k=k, q=q, v=v, edge_attr=edge_attr)
+
+        for node_type, start_offset in dst_offset.items():
+            end_offset = start_offset + q_dict[node_type].size(0)
+            if node_type in self.dst_node_types:
+                out_dict[node_type] = out[start_offset:end_offset]
+
+        a_dict = self.out_lin({
+            key: F.gelu(value) if value is not None else value
+            for key, value in out_dict.items()
+        })
+
+        for node_type, out_node in out_dict.items():
+            out_node = a_dict[node_type]
+            if out_node.size(-1) == x_dict[node_type].size(-1):
+                alpha = self.skip[node_type].sigmoid()
+                out_node = alpha * out_node + (1 - alpha) * x_dict[node_type]
+            out_dict[node_type] = out_node
+
+        if self._last_alpha is not None:
+            alpha = self._last_alpha
+            for rel, (start, end) in self._relation_ranges.items():
+                if end > start:
+                    rel_alpha = alpha[start:end]
+                    if rel_alpha.numel() > 0:
+                        self.last_attention[str(rel)] = rel_alpha.mean(dim=0)
+
+        return out_dict
+
+    def message(self, k_j: torch.Tensor, q_i: torch.Tensor, v_j: torch.Tensor,
+                edge_attr: torch.Tensor, index: torch.Tensor, ptr: torch.Tensor,
+                size_i: int):
+        alpha = (q_i * k_j).sum(dim=-1) * edge_attr
+        alpha = alpha / math.sqrt(q_i.size(-1))
+        alpha = softmax(alpha, index, ptr, size_i)
+        self._last_alpha = alpha.detach().clone()
+        out = v_j * alpha.view(-1, self.heads, 1)
+        return out.view(-1, self.out_channels)
 
     def route_attention_summary(self):
         summary = {}
@@ -190,27 +250,49 @@ class HGTEncoder(nn.Module):
         self.norms = nn.ModuleDict({nt: nn.LayerNorm(hidden) for nt in metadata[0]})
 
     def forward(self, x_dict, edge_index_dict):
-        x_dict = {nt: self.lin_dict[nt](x) for nt, x in x_dict.items() if nt in self.lin_dict}
+        missing = [nt for nt in self.metadata[0] if nt not in x_dict]
+        if missing:
+            raise KeyError(f"HGTEncoder missing node types: {missing}. Available keys: {sorted(x_dict.keys())}")
+
+        projected = {nt: self.lin_dict[nt](x) for nt, x in x_dict.items() if nt in self.lin_dict}
         for conv in self.layers:
-            x_dict = conv(x_dict, edge_index_dict)
-            x_dict = {nt: self.norms[nt](F.gelu(x)) for nt, x in x_dict.items()}
-        return x_dict
+            prev = projected.copy()
+            projected = conv(projected, edge_index_dict)
+            for nt in self.metadata[0]:
+                if nt not in projected:
+                    projected[nt] = prev[nt]
+            projected = {
+                nt: self.norms[nt](F.gelu(projected[nt]))
+                for nt in self.metadata[0]
+                if nt in projected
+            }
+        return projected
 
     def route_attention_summary(self):
-        """Return a flattened, sorted view of per-layer, per-relation attention strength.
+        """Return a route-level summary aggregated across HGT layers.
 
-        This is intended for route-importance inspection, where one wants
-        to know whether the model is consistently attending to paths such as
-        drug -> gene -> phenotype or variant -> gene -> phenotype.
+        Each relation type (e.g. ('drug', 'causes', 'clinical_outcome')) is reported once,
+        using the mean attention across layers. The layer ids are retained for traceability
+        when a route differs materially between layers.
         """
-        summary = []
+        grouped = {}
         for layer_idx, layer in enumerate(self.layers):
             for rel_key, attn_mean in layer.route_attention_summary().items():
-                summary.append({
-                    'layer': layer_idx,
-                    'relation': rel_key,
-                    'mean_attention': attn_mean,
-                })
+                if rel_key not in grouped:
+                    grouped[rel_key] = {'values': [], 'layers': []}
+                grouped[rel_key]['values'].append(attn_mean)
+                grouped[rel_key]['layers'].append(layer_idx)
+
+        summary = []
+        for rel_key, info in grouped.items():
+            values = info['values']
+            summary.append({
+                'relation': rel_key,
+                'mean_attention': float(sum(values) / len(values)),
+                'layers': info['layers'],
+                'layer_count': len(values),
+            })
+
         return sorted(summary, key=lambda d: d['mean_attention'], reverse=True)
 
     def route_attention_report(self, title='HGT attended paths (sorted by mean attention):', limit=None):
@@ -225,8 +307,10 @@ class HGTEncoder(nn.Module):
             rel = item['relation']
             if isinstance(rel, tuple):
                 rel = ' -> '.join(str(r) for r in rel)
+            layers = item.get('layers', [])
+            layer_text = f"layers={layers}" if layers else "layers=[]"
             lines.append(
-                f"  {idx:02d}. layer={item['layer']:02d} | path={rel} | mean_attention={item['mean_attention']:.6f}"
+                f"  {idx:02d}. path={rel} | {layer_text} | mean_attention={item['mean_attention']:.6f}"
             )
         return "\n".join(lines)
 
@@ -279,10 +363,29 @@ class HetModel(nn.Module):
         self.metadata = data.metadata()
         self.encoder = HGTEncoder(self.metadata, hidden=hidden, heads=2, layers=2)
         self.scorer  = RelScorer(hidden, relations=self.metadata[1])
-        self.domain_adv = DomainAdversary(hidden, n_domains=3)  
+        n_ancestry = len(data['ancestry'].x) if 'ancestry' in data.node_types and hasattr(data['ancestry'], 'x') else 1
+        self.domain_adv = DomainAdversary(hidden, n_domains=n_ancestry)
 
     def forward(self, data):
-        z = self.encoder(data.x_dict, data.edge_index_dict)
+        node_types = list(data.node_types)
+        x_dict = {nt: data[nt].x for nt in node_types if hasattr(data[nt], 'x')}
+        edge_index_dict = {
+            rel: data[rel].edge_index for rel in data.edge_types if hasattr(data[rel], 'edge_index')
+        }
+        missing = [nt for nt in node_types if nt not in x_dict]
+        if missing:
+            raise KeyError(
+                f"Missing node features for HGT forward pass: {missing}. "
+                f"node_types={node_types}; edge_types={list(data.edge_types)[:10]}"
+            )
+        source_types = {src for src, _, _ in edge_index_dict.keys()}
+        missing_sources = sorted(source_types - set(x_dict.keys()))
+        if missing_sources:
+            raise KeyError(
+                f"Edges reference source node types without features: {missing_sources}. "
+                f"Available x_dict keys: {sorted(x_dict.keys())}"
+            )
+        z = self.encoder(x_dict, edge_index_dict)
         return z
 
     def link_logits(self, z, edge_index, rel):

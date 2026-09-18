@@ -39,4 +39,7 @@ srun python code/modelling.py --input_directory data \
 --ancestry_val unspecified \
 --ancestry_test unspecified \
 --prediction_type drug_causes_side_effect \
---output_directory output/output_drug_causes_phen
+--output_directory output/output_drug_causes_phen \
+# --focus_test_relation True
+
+# --ignore_relations "drug,treats,clinical_outcome" \

@@ -36,7 +36,11 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 export TF_CPP_MIN_LOG_LEVEL=1
 
 srun python code/modelling.py --input_directory data \
---ancestry_val GME \
---ancestry_test EAS \
+--ancestry_val EAS \
+--ancestry_test AMR \
 --prediction_type variant_phenotype \
---output_directory output/output_var_phen_anc
+--output_directory output/output_var_phen_anc_focus \
+--focus_test_relation True \
+# --ignore_relations "gene,interacts_with,gene|variant,maps_to,gene|drug,causes,clinical_outcome|drug,treats,clinical_outcome" \
+
+# --ignore_relations "drug,treats,clinical_outcome" \

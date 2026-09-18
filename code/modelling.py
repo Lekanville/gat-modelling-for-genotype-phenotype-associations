@@ -58,11 +58,91 @@ parser.add_argument(
     ],
     help='Select whether to train/evaluate variant-phenotype, drug repurposing, drug-side-effect, or the combined multi-task setup.'
 )
+parser.add_argument(
+    '--ignore_relations',
+    type=str,
+    default='',
+    help='Comma-separated relation tuples to remove from the heterogeneous graph before training, e.g. "drug,treats,clinical_outcome" or "drug,treats,clinical_outcome;gene,associated_with,clinical_outcome".'
+)
+parser.add_argument(
+    '--focus_test_relation',
+    type=str,
+    default='false',
+    help='When true, restrict validation/test scoring to the relation implied by the selected prediction_type. This is a leakage-control setting for the held-out split, not a graph-wide relation filter.'
+)
 
 
+def parse_bool(value):
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'y', 'on'}
 
-def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
 
+def parse_relation_string(value):
+    if value is None or value == '':
+        return set()
+    raw = str(value).strip()
+    if not raw or raw.lower() in {'none', 'all'}:
+        return set()
+
+    # Treat each relation tuple as a separate group and only split within each tuple.
+    # Accept either semicolon or pipe separators between tuples, and commas within a tuple.
+    raw = raw.replace(';', '|').replace('-', ',')
+    groups = [group.strip() for group in raw.split('|') if group.strip()]
+
+    out = set()
+    for group in groups:
+        tokens = [token.strip().strip("()[]'\"") for token in group.split(',') if token.strip()]
+        if len(tokens) == 3:
+            out.add(tuple(tokens))
+    return out
+
+
+def drop_relation_types(data, relations_to_drop):
+    relations_to_drop = {tuple(rel) for rel in relations_to_drop}
+    for rel in list(data.edge_types):
+        if tuple(rel) in relations_to_drop:
+            del data[rel]
+    return data
+
+
+def apply_relation_filters(data, ignore_relations=''):
+    ignored = parse_relation_string(ignore_relations)
+    if ignored:
+        data = drop_relation_types(data, ignored)
+    return data
+
+
+def restrict_one_edge_per_source(edge_index, mask):
+    """Keep exactly one edge per source node in the selected mask.
+
+    This is used only for validation/test edges after the usual source-aware split.
+    Training masks are left untouched, so the graph keeps the original split semantics.
+    """
+    if edge_index is None or edge_index.numel() == 0:
+        return mask.clone()
+
+    selected_idx = torch.nonzero(mask, as_tuple=False).flatten()
+    if selected_idx.numel() == 0:
+        return mask.clone()
+
+    source_ids = edge_index[0, selected_idx]
+    kept = torch.zeros_like(mask, dtype=torch.bool)
+    seen = set()
+    for idx, src in zip(selected_idx.tolist(), source_ids.tolist()):
+        src_id = int(src)
+        if src_id in seen:
+            continue
+        seen.add(src_id)
+        kept[idx] = True
+    return kept
+
+
+def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, IGNORE_RELATIONS='', FOCUS_TEST_RELATION=False):
+
+    FOCUS_TEST_RELATION = parse_bool(FOCUS_TEST_RELATION)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     torch.manual_seed(42)
     random.seed(42)
@@ -173,8 +253,10 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     
     # Building the edges
     data = edges_init(data, edge_dfs, mappings)
+    original_edge_counts = {tuple(edge): data[edge].edge_index.shape[1] for edge in list(data.edge_types)}
+    data = apply_relation_filters(data, IGNORE_RELATIONS)
     print("All 8 Node Feature Matrices successfully loaded!")
-    audit_and_visualize_heterodata(data, OUTPUT)
+    audit_and_visualize_heterodata(data, OUTPUT, ignored_relations=IGNORE_RELATIONS, original_edge_counts=original_edge_counts)
 
     # Build ancestry targets from the phenotype subset used in the variant-phenotype task.
     # The full clinical_outcome tensor still needs a full-length vector for indexing, but
@@ -229,9 +311,10 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
         device=device,
     )
 
-    rel_variant = ('variant', 'associated_with', 'phenotype')
-    rel_drug_treats = ('drug', 'treats', 'phenotype')
-    rel_drug_causes = ('drug', 'causes', 'side_effect')
+    rel_variant = ('variant', 'associated_with', 'clinical_outcome')
+    rel_drug_treats = ('drug', 'treats', 'clinical_outcome')
+    rel_drug_causes = ('drug', 'causes', 'clinical_outcome')
+
     relation_alias = {
         rel_variant: 'variant_phenotype',
         rel_drug_treats: 'drug_treats_phenotype',
@@ -241,6 +324,11 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
         rel_variant: 'variant-phenotype',
         rel_drug_treats: 'drug-treats-phenotype',
         rel_drug_causes: 'drug-causes-side-effects',
+    }
+    prediction_relation_map = {
+        'variant_phenotype': rel_variant,
+        'drug_treats_phenotype': rel_drug_treats,
+        'drug_causes_side_effect': rel_drug_causes,
     }
 
     if PREDICTION_TYPE == 'variant_phenotype':
@@ -252,8 +340,16 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     else:
         supervised_relations = [rel_variant, rel_drug_treats, rel_drug_causes]
 
+    if FOCUS_TEST_RELATION:
+        target_relation = prediction_relation_map.get(PREDICTION_TYPE, supervised_relations[0])
+        test_relations = [target_relation]
+    else:
+        test_relations = supervised_relations
+
     print(f"Prediction type: {PREDICTION_TYPE}")
     print(f"Supervised relations: {[relation_name[r] for r in supervised_relations]}")
+    if FOCUS_TEST_RELATION:
+        print(f"Test-focus relation: {relation_name[test_relations[0]]}")
     drug_split_counts = {}
 
     if (ANCESTRY_TEST == 'unspecified') and (ANCESTRY_VAL == 'unspecified'):
@@ -299,6 +395,18 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
                     data[rel].val_mask = va
                     data[rel].test_mask = te
 
+    if FOCUS_TEST_RELATION:
+        for rel in supervised_relations:
+            if rel in data.edge_types:
+                raw_val = data[rel].val_mask.clone()
+                raw_te = data[rel].test_mask.clone()
+                data[rel].val_mask = restrict_one_edge_per_source(data[rel].edge_index, raw_val)
+                data[rel].test_mask = restrict_one_edge_per_source(data[rel].edge_index, raw_te)
+                print(
+                    f"{relation_name[rel]} final masks after one-edge-per-source val/test focus: "
+                    f"train={int(data[rel].train_mask.sum())}, val={int(data[rel].val_mask.sum())}, test={int(data[rel].test_mask.sum())}"
+                )
+
     EMBED_DIM = 128 
     data = data.to(device)
     assert set(data.metadata()[0]) == set(data.x_dict.keys()), \
@@ -307,11 +415,12 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     opt = torch.optim.AdamW(model.parameters(), lr=2e-3, weight_decay=1e-4)
 
     @torch.no_grad()
-    def evaluate(mask_key='val_mask'):
+    def evaluate(mask_key='val_mask', relations=None):
         model.eval()
         z = model(data)
+        relations = supervised_relations if relations is None else relations
         out = {}
-        for rel in supervised_relations:
+        for rel in relations:
             pos, neg = relation_batch(data, rel, mask_key=mask_key, num_neg=4096)
             loss_rel, met = edge_loss_and_metrics(model, z, rel, pos, neg)
             out['/'.join(rel)] = {'loss': loss_rel.item(), **met}
@@ -392,7 +501,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
         # New
         model.eval()
         with torch.no_grad():
-            val_out = evaluate('val_mask')
+            val_out = evaluate('val_mask', relations=test_relations if FOCUS_TEST_RELATION else supervised_relations)
             val_loss_total = sum(v['loss'] for v in val_out.values())
 
         epoch_time = time.perf_counter() - epoch_start
@@ -424,7 +533,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
                     f"AUROC={metrics[rel_key]['auroc']:.3f} AP={metrics[rel_key]['ap']:.3f} "
                 )
             print(msg)
-            model.encoder.print_route_attention_summary(limit=20)
+            # model.encoder.print_route_attention_summary(limit=None)
 
         if val_loss_total < best_val_loss - min_delta:
             best_val_loss = val_loss_total
@@ -446,13 +555,13 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
     # Validation on held-out edges          #
     ############################################
 
-    val = evaluate('val_mask')
-    test = evaluate('test_mask')
+    val = evaluate('val_mask', relations=test_relations if FOCUS_TEST_RELATION else supervised_relations)
+    test = evaluate('test_mask', relations=test_relations if FOCUS_TEST_RELATION else supervised_relations)
     print(f"VAL ({PREDICTION_TYPE}):", val)
     print(f"TEST ({PREDICTION_TYPE}):", test)
     print("\n" + model.encoder.route_attention_report(
-        title='Final HGT attended paths (top-ranked routes after training):',
-        limit=20,
+        title='Final HGT attended paths (all routes after training):',
+        limit=None,
     ))
 
     ############################################
@@ -469,4 +578,12 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    gat_modelling(args.input_directory, args.ancestry_test, args.ancestry_val, args.output_directory, args.prediction_type)
+    gat_modelling(
+        args.input_directory,
+        args.ancestry_test,
+        args.ancestry_val,
+        args.output_directory,
+        args.prediction_type,
+        args.ignore_relations,
+        args.focus_test_relation,
+    )
