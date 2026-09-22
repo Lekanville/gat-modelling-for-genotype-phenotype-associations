@@ -1,0 +1,5 @@
+phenotype,HPO_ID,Is_Primary_T2D,Is_Primary_Obesity,Is_Primary_Hypertension,Is_Primary_Hyperglycemia
+T2D,HP:0005978,1,0,0,0
+Obesity,HP:0001513,0,1,0,0
+Hypertension,HP:0000822,0,0,1,0
+Hyperglycemia,HP:0003074,0,0,0,1

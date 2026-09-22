@@ -1,0 +1,41 @@
+HPO_ID,Phenotype_Name,Is_Primary_T2D,Is_Primary_Obesity,Is_Primary_Hypertension,Is_Primary_Hyperglycemia
+HP:0005978,Type II diabetes mellitus,1,0,0,0
+HP:0003074,Hyperglycemia,0,0,0,1
+HP:0000118,Phenotypic abnormality,1,1,0,1
+HP:0031819,Increased waist to hip ratio,1,0,0,0
+HP:0000818,Abnormality of the endocrine system,1,0,0,0
+HP:0004324,Increased body weight,0,1,0,0
+HP:0012337,Abnormal homeostasis,1,0,0,1
+HP:0001513,Obesity,0,1,0,0
+HP:0011013,Abnormal circulating carbohydrate concentration,0,0,0,1
+HP:0001507,Growth abnormality,1,1,0,0
+HP:0011015,Abnormal blood glucose concentration,0,0,0,1
+HP:0001939,Abnormality of metabolism/homeostasis,1,0,0,1
+HP:0004323,Abnormality of body weight,1,1,0,0
+HP:0020347,Abnormal circulating monosaccharide concentration,0,0,0,1
+HP:0430071,Abnormal circulating organic compound concentration,0,0,0,1
+HP:0011014,Abnormal glucose homeostasis,1,0,0,1
+HP:0000819,Diabetes mellitus,1,0,0,0
+HP:0031818,Abnormal waist to hip ratio,1,0,0,0
+HP:0000855,Insulin resistance,1,0,0,0
+HP:0001952,Glucose intolerance,1,0,0,0
+HP:0032180,Abnormal circulating metabolite concentration,0,0,0,1
+HP:0001397,Hepatic steatosis,0,1,0,0
+HP:0000822,Hypertension,0,1,1,0
+HP:0000798,Oligozoospermia,0,1,0,0
+HP:0003292,Decreased serum leptin,0,1,0,0
+HP:0002591,Polyphagia,0,1,0,0
+HP:0100738,Abnormal eating behavior,0,1,0,0
+HP:0000718,Aggressive behavior,0,1,0,0
+HP:0000823,Delayed puberty,0,1,0,0
+HP:0000712,Emotional lability,0,1,0,0
+HP:0000815,Hypergonadotropic hypogonadism,0,1,0,0
+HP:0011748,Adrenocorticotropic hormone deficiency,0,1,0,0
+HP:0008163,Decreased circulating cortisol level,0,1,0,0
+HP:0002297,Red hair,0,1,0,0
+HP:6000419,Elevated circulating proinsulin concentration,0,1,0,0
+HP:0000044,Hypogonadotropic hypogonadism,0,1,0,0
+HP:0040216,Hypoinsulinemia,0,1,0,0
+HP:0005117,Elevated diastolic blood pressure,0,0,1,0
+HP:0004972,Elevated mean arterial pressure,0,0,1,0
+HP:0004421,Elevated systolic blood pressure,0,0,1,0

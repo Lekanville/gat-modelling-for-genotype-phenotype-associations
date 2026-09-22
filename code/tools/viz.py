@@ -107,6 +107,72 @@ def audit_and_visualize_heterodata(data, output_dir, ignored_relations='', origi
     print(f"\nVisualizations successfully saved to {output_dir}/")
 
 
+def plot_score_histogram(pos_scores, neg_scores, output_path, title='Positive vs negative score histogram'):
+    pos_scores = np.asarray(pos_scores).reshape(-1)
+    neg_scores = np.asarray(neg_scores).reshape(-1)
+    if pos_scores.size == 0 or neg_scores.size == 0:
+        return
+
+    plt.figure(figsize=(9, 5))
+    plt.hist(pos_scores, bins=40, alpha=0.7, color='tab:green', label='positive')
+    plt.hist(neg_scores, bins=40, alpha=0.7, color='tab:red', label='negative')
+    plt.xlabel('score')
+    plt.ylabel('count')
+    plt.title(title)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=200)
+    plt.close()
+
+
+def plot_roc_curve(pos_scores, neg_scores, output_path, title='ROC curve'):
+    pos_scores = np.asarray(pos_scores).reshape(-1)
+    neg_scores = np.asarray(neg_scores).reshape(-1)
+    if pos_scores.size == 0 or neg_scores.size == 0:
+        return
+
+    scores = np.concatenate([pos_scores, neg_scores])
+    labels = np.concatenate([
+        np.ones(len(pos_scores), dtype=int),
+        np.zeros(len(neg_scores), dtype=int),
+    ])
+
+    thresholds = np.unique(scores)
+    fpr = []
+    tpr = []
+    for threshold in thresholds:
+        pred = (scores >= threshold).astype(int)
+        tp = np.sum((pred == 1) & (labels == 1))
+        fp = np.sum((pred == 1) & (labels == 0))
+        tn = np.sum((pred == 0) & (labels == 0))
+        fn = np.sum((pred == 0) & (labels == 1))
+
+        tpr_val = tp / max(1, np.sum(labels == 1))
+        fpr_val = fp / max(1, np.sum(labels == 0))
+        tpr.append(tpr_val)
+        fpr.append(fpr_val)
+
+    fpr = np.asarray(fpr)
+    tpr = np.asarray(tpr)
+    order = np.argsort(fpr)
+    fpr = fpr[order]
+    tpr = tpr[order]
+
+    fpr = np.concatenate([[0.0], fpr, [1.0]])
+    tpr = np.concatenate([[0.0], tpr, [1.0]])
+
+    plt.figure(figsize=(7, 7))
+    plt.plot(fpr, tpr, color='tab:blue', linewidth=2)
+    plt.plot([0, 1], [0, 1], linestyle='--', color='gray', linewidth=1)
+    plt.xlabel('False positive rate')
+    plt.ylabel('True positive rate')
+    plt.title(title)
+    plt.grid(alpha=0.25)
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=200)
+    plt.close()
+
+
 def plot_training_history(history, output_dir):
 
     fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=False)

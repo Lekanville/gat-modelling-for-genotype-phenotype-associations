@@ -1,0 +1,401 @@
+,target_hpo,source_tissue,phenotype_name,p_value,weight,weight_norm
+0,HP:0000044,Adipose_Subcutaneous,Hypogonadotropic hypogonadism,0.55403,0.2565,0.087949
+1,HP:0000044,Artery_Aorta,Hypogonadotropic hypogonadism,0.0020111,2.6966,1.0
+2,HP:0000044,Heart_Left_Ventricle,Hypogonadotropic hypogonadism,0.17693,0.7522,0.27323
+3,HP:0000044,Kidney_Cortex,Hypogonadotropic hypogonadism,0.76343,0.1172,0.035882
+4,HP:0000044,Liver,Hypogonadotropic hypogonadism,0.66598,0.1765,0.058047
+5,HP:0000044,Muscle_Skeletal,Hypogonadotropic hypogonadism,0.24173,0.6167,0.222584
+6,HP:0000044,Pancreas,Hypogonadotropic hypogonadism,0.55759,0.2537,0.086903
+7,HP:0000044,Whole_Blood,Hypogonadotropic hypogonadism,0.95246,0.0212,0.0
+8,HP:0000044,Brain_Hypothalamus,Hypogonadotropic hypogonadism,0.11643,0.9339,0.341145
+9,HP:0000044,Small_Intestine_Terminal_Ileum,Hypogonadotropic hypogonadism,0.94451,0.0248,0.001346
+10,HP:0000118,Adipose_Subcutaneous,Phenotypic abnormality,0.3586,0.4454,0.127239
+11,HP:0000118,Artery_Aorta,Phenotypic abnormality,0.0020111,2.6966,1.0
+12,HP:0000118,Heart_Left_Ventricle,Phenotypic abnormality,0.17693,0.7522,0.246181
+13,HP:0000118,Kidney_Cortex,Phenotypic abnormality,0.76343,0.1172,0.0
+14,HP:0000118,Liver,Phenotypic abnormality,0.66598,0.1765,0.02299
+15,HP:0000118,Muscle_Skeletal,Phenotypic abnormality,0.24173,0.6167,0.19365
+16,HP:0000118,Pancreas,Phenotypic abnormality,0.52212,0.2822,0.063968
+17,HP:0000118,Whole_Blood,Phenotypic abnormality,0.67483,0.1708,0.02078
+18,HP:0000118,Brain_Hypothalamus,Phenotypic abnormality,0.11643,0.9339,0.316624
+19,HP:0000118,Small_Intestine_Terminal_Ileum,Phenotypic abnormality,0.57971,0.2368,0.046367
+20,HP:0000712,Adipose_Subcutaneous,Emotional lability,0.55403,0.2565,0.087949
+21,HP:0000712,Artery_Aorta,Emotional lability,0.0020111,2.6966,1.0
+22,HP:0000712,Heart_Left_Ventricle,Emotional lability,0.17693,0.7522,0.27323
+23,HP:0000712,Kidney_Cortex,Emotional lability,0.76343,0.1172,0.035882
+24,HP:0000712,Liver,Emotional lability,0.66598,0.1765,0.058047
+25,HP:0000712,Muscle_Skeletal,Emotional lability,0.24173,0.6167,0.222584
+26,HP:0000712,Pancreas,Emotional lability,0.55759,0.2537,0.086903
+27,HP:0000712,Whole_Blood,Emotional lability,0.95246,0.0212,0.0
+28,HP:0000712,Brain_Hypothalamus,Emotional lability,0.11643,0.9339,0.341145
+29,HP:0000712,Small_Intestine_Terminal_Ileum,Emotional lability,0.94451,0.0248,0.001346
+30,HP:0000718,Adipose_Subcutaneous,Aggressive behavior,0.55403,0.2565,0.087949
+31,HP:0000718,Artery_Aorta,Aggressive behavior,0.0020111,2.6966,1.0
+32,HP:0000718,Heart_Left_Ventricle,Aggressive behavior,0.17693,0.7522,0.27323
+33,HP:0000718,Kidney_Cortex,Aggressive behavior,0.76343,0.1172,0.035882
+34,HP:0000718,Liver,Aggressive behavior,0.66598,0.1765,0.058047
+35,HP:0000718,Muscle_Skeletal,Aggressive behavior,0.24173,0.6167,0.222584
+36,HP:0000718,Pancreas,Aggressive behavior,0.55759,0.2537,0.086903
+37,HP:0000718,Whole_Blood,Aggressive behavior,0.95246,0.0212,0.0
+38,HP:0000718,Brain_Hypothalamus,Aggressive behavior,0.11643,0.9339,0.341145
+39,HP:0000718,Small_Intestine_Terminal_Ileum,Aggressive behavior,0.94451,0.0248,0.001346
+40,HP:0000798,Adipose_Subcutaneous,Oligozoospermia,0.55403,0.2565,0.087949
+41,HP:0000798,Artery_Aorta,Oligozoospermia,0.0020111,2.6966,1.0
+42,HP:0000798,Heart_Left_Ventricle,Oligozoospermia,0.17693,0.7522,0.27323
+43,HP:0000798,Kidney_Cortex,Oligozoospermia,0.76343,0.1172,0.035882
+44,HP:0000798,Liver,Oligozoospermia,0.66598,0.1765,0.058047
+45,HP:0000798,Muscle_Skeletal,Oligozoospermia,0.24173,0.6167,0.222584
+46,HP:0000798,Pancreas,Oligozoospermia,0.55759,0.2537,0.086903
+47,HP:0000798,Whole_Blood,Oligozoospermia,0.95246,0.0212,0.0
+48,HP:0000798,Brain_Hypothalamus,Oligozoospermia,0.11643,0.9339,0.341145
+49,HP:0000798,Small_Intestine_Terminal_Ileum,Oligozoospermia,0.94451,0.0248,0.001346
+50,HP:0000815,Adipose_Subcutaneous,Hypergonadotropic hypogonadism,0.55403,0.2565,0.087949
+51,HP:0000815,Artery_Aorta,Hypergonadotropic hypogonadism,0.0020111,2.6966,1.0
+52,HP:0000815,Heart_Left_Ventricle,Hypergonadotropic hypogonadism,0.17693,0.7522,0.27323
+53,HP:0000815,Kidney_Cortex,Hypergonadotropic hypogonadism,0.76343,0.1172,0.035882
+54,HP:0000815,Liver,Hypergonadotropic hypogonadism,0.66598,0.1765,0.058047
+55,HP:0000815,Muscle_Skeletal,Hypergonadotropic hypogonadism,0.24173,0.6167,0.222584
+56,HP:0000815,Pancreas,Hypergonadotropic hypogonadism,0.55759,0.2537,0.086903
+57,HP:0000815,Whole_Blood,Hypergonadotropic hypogonadism,0.95246,0.0212,0.0
+58,HP:0000815,Brain_Hypothalamus,Hypergonadotropic hypogonadism,0.11643,0.9339,0.341145
+59,HP:0000815,Small_Intestine_Terminal_Ileum,Hypergonadotropic hypogonadism,0.94451,0.0248,0.001346
+60,HP:0000818,Adipose_Subcutaneous,Abnormality of the endocrine system,0.3586,0.4454,0.696694
+61,HP:0000818,Artery_Aorta,Abnormality of the endocrine system,0.23701,0.6252,1.0
+62,HP:0000818,Heart_Left_Ventricle,Abnormality of the endocrine system,0.67617,0.1699,0.23195
+63,HP:0000818,Kidney_Cortex,Abnormality of the endocrine system,0.92805,0.0324,0.0
+64,HP:0000818,Liver,Abnormality of the endocrine system,0.8199,0.0862,0.090756
+65,HP:0000818,Muscle_Skeletal,Abnormality of the endocrine system,0.83421,0.0787,0.078104
+66,HP:0000818,Pancreas,Abnormality of the endocrine system,0.52212,0.2822,0.42139
+67,HP:0000818,Whole_Blood,Abnormality of the endocrine system,0.67483,0.1708,0.233468
+68,HP:0000818,Brain_Hypothalamus,Abnormality of the endocrine system,0.6347,0.1974,0.27834
+69,HP:0000818,Small_Intestine_Terminal_Ileum,Abnormality of the endocrine system,0.57971,0.2368,0.344804
+70,HP:0000819,Adipose_Subcutaneous,Diabetes mellitus,0.3586,0.4454,0.696694
+71,HP:0000819,Artery_Aorta,Diabetes mellitus,0.23701,0.6252,1.0
+72,HP:0000819,Heart_Left_Ventricle,Diabetes mellitus,0.67617,0.1699,0.23195
+73,HP:0000819,Kidney_Cortex,Diabetes mellitus,0.92805,0.0324,0.0
+74,HP:0000819,Liver,Diabetes mellitus,0.8199,0.0862,0.090756
+75,HP:0000819,Muscle_Skeletal,Diabetes mellitus,0.83421,0.0787,0.078104
+76,HP:0000819,Pancreas,Diabetes mellitus,0.52212,0.2822,0.42139
+77,HP:0000819,Whole_Blood,Diabetes mellitus,0.67483,0.1708,0.233468
+78,HP:0000819,Brain_Hypothalamus,Diabetes mellitus,0.6347,0.1974,0.27834
+79,HP:0000819,Small_Intestine_Terminal_Ileum,Diabetes mellitus,0.57971,0.2368,0.344804
+80,HP:0000822,Adipose_Subcutaneous,Hypertension,0.3586,0.4454,0.127239
+81,HP:0000822,Artery_Aorta,Hypertension,0.0020111,2.6966,1.0
+82,HP:0000822,Heart_Left_Ventricle,Hypertension,0.17693,0.7522,0.246181
+83,HP:0000822,Kidney_Cortex,Hypertension,0.76343,0.1172,0.0
+84,HP:0000822,Liver,Hypertension,0.66598,0.1765,0.02299
+85,HP:0000822,Muscle_Skeletal,Hypertension,0.24173,0.6167,0.19365
+86,HP:0000822,Pancreas,Hypertension,0.52212,0.2822,0.063968
+87,HP:0000822,Whole_Blood,Hypertension,0.67483,0.1708,0.02078
+88,HP:0000822,Brain_Hypothalamus,Hypertension,0.11643,0.9339,0.316624
+89,HP:0000822,Small_Intestine_Terminal_Ileum,Hypertension,0.57971,0.2368,0.046367
+90,HP:0000823,Adipose_Subcutaneous,Delayed puberty,0.55403,0.2565,0.087949
+91,HP:0000823,Artery_Aorta,Delayed puberty,0.0020111,2.6966,1.0
+92,HP:0000823,Heart_Left_Ventricle,Delayed puberty,0.17693,0.7522,0.27323
+93,HP:0000823,Kidney_Cortex,Delayed puberty,0.76343,0.1172,0.035882
+94,HP:0000823,Liver,Delayed puberty,0.66598,0.1765,0.058047
+95,HP:0000823,Muscle_Skeletal,Delayed puberty,0.24173,0.6167,0.222584
+96,HP:0000823,Pancreas,Delayed puberty,0.55759,0.2537,0.086903
+97,HP:0000823,Whole_Blood,Delayed puberty,0.95246,0.0212,0.0
+98,HP:0000823,Brain_Hypothalamus,Delayed puberty,0.11643,0.9339,0.341145
+99,HP:0000823,Small_Intestine_Terminal_Ileum,Delayed puberty,0.94451,0.0248,0.001346
+100,HP:0000855,Adipose_Subcutaneous,Insulin resistance,0.3586,0.4454,0.696694
+101,HP:0000855,Artery_Aorta,Insulin resistance,0.23701,0.6252,1.0
+102,HP:0000855,Heart_Left_Ventricle,Insulin resistance,0.67617,0.1699,0.23195
+103,HP:0000855,Kidney_Cortex,Insulin resistance,0.92805,0.0324,0.0
+104,HP:0000855,Liver,Insulin resistance,0.8199,0.0862,0.090756
+105,HP:0000855,Muscle_Skeletal,Insulin resistance,0.83421,0.0787,0.078104
+106,HP:0000855,Pancreas,Insulin resistance,0.52212,0.2822,0.42139
+107,HP:0000855,Whole_Blood,Insulin resistance,0.67483,0.1708,0.233468
+108,HP:0000855,Brain_Hypothalamus,Insulin resistance,0.6347,0.1974,0.27834
+109,HP:0000855,Small_Intestine_Terminal_Ileum,Insulin resistance,0.57971,0.2368,0.344804
+110,HP:0001397,Adipose_Subcutaneous,Hepatic steatosis,0.55403,0.2565,0.087949
+111,HP:0001397,Artery_Aorta,Hepatic steatosis,0.0020111,2.6966,1.0
+112,HP:0001397,Heart_Left_Ventricle,Hepatic steatosis,0.17693,0.7522,0.27323
+113,HP:0001397,Kidney_Cortex,Hepatic steatosis,0.76343,0.1172,0.035882
+114,HP:0001397,Liver,Hepatic steatosis,0.66598,0.1765,0.058047
+115,HP:0001397,Muscle_Skeletal,Hepatic steatosis,0.24173,0.6167,0.222584
+116,HP:0001397,Pancreas,Hepatic steatosis,0.55759,0.2537,0.086903
+117,HP:0001397,Whole_Blood,Hepatic steatosis,0.95246,0.0212,0.0
+118,HP:0001397,Brain_Hypothalamus,Hepatic steatosis,0.11643,0.9339,0.341145
+119,HP:0001397,Small_Intestine_Terminal_Ileum,Hepatic steatosis,0.94451,0.0248,0.001346
+120,HP:0001507,Adipose_Subcutaneous,Growth abnormality,0.3586,0.4454,0.127239
+121,HP:0001507,Artery_Aorta,Growth abnormality,0.0020111,2.6966,1.0
+122,HP:0001507,Heart_Left_Ventricle,Growth abnormality,0.17693,0.7522,0.246181
+123,HP:0001507,Kidney_Cortex,Growth abnormality,0.76343,0.1172,0.0
+124,HP:0001507,Liver,Growth abnormality,0.66598,0.1765,0.02299
+125,HP:0001507,Muscle_Skeletal,Growth abnormality,0.24173,0.6167,0.19365
+126,HP:0001507,Pancreas,Growth abnormality,0.52212,0.2822,0.063968
+127,HP:0001507,Whole_Blood,Growth abnormality,0.67483,0.1708,0.02078
+128,HP:0001507,Brain_Hypothalamus,Growth abnormality,0.11643,0.9339,0.316624
+129,HP:0001507,Small_Intestine_Terminal_Ileum,Growth abnormality,0.57971,0.2368,0.046367
+130,HP:0001513,Adipose_Subcutaneous,Obesity,0.55403,0.2565,0.087949
+131,HP:0001513,Artery_Aorta,Obesity,0.0020111,2.6966,1.0
+132,HP:0001513,Heart_Left_Ventricle,Obesity,0.17693,0.7522,0.27323
+133,HP:0001513,Kidney_Cortex,Obesity,0.76343,0.1172,0.035882
+134,HP:0001513,Liver,Obesity,0.66598,0.1765,0.058047
+135,HP:0001513,Muscle_Skeletal,Obesity,0.24173,0.6167,0.222584
+136,HP:0001513,Pancreas,Obesity,0.55759,0.2537,0.086903
+137,HP:0001513,Whole_Blood,Obesity,0.95246,0.0212,0.0
+138,HP:0001513,Brain_Hypothalamus,Obesity,0.11643,0.9339,0.341145
+139,HP:0001513,Small_Intestine_Terminal_Ileum,Obesity,0.94451,0.0248,0.001346
+140,HP:0001939,Adipose_Subcutaneous,Abnormality of metabolism/homeostasis,0.3586,0.4454,0.696694
+141,HP:0001939,Artery_Aorta,Abnormality of metabolism/homeostasis,0.23701,0.6252,1.0
+142,HP:0001939,Heart_Left_Ventricle,Abnormality of metabolism/homeostasis,0.67617,0.1699,0.23195
+143,HP:0001939,Kidney_Cortex,Abnormality of metabolism/homeostasis,0.92805,0.0324,0.0
+144,HP:0001939,Liver,Abnormality of metabolism/homeostasis,0.8199,0.0862,0.090756
+145,HP:0001939,Muscle_Skeletal,Abnormality of metabolism/homeostasis,0.83421,0.0787,0.078104
+146,HP:0001939,Pancreas,Abnormality of metabolism/homeostasis,0.52212,0.2822,0.42139
+147,HP:0001939,Whole_Blood,Abnormality of metabolism/homeostasis,0.67483,0.1708,0.233468
+148,HP:0001939,Brain_Hypothalamus,Abnormality of metabolism/homeostasis,0.6347,0.1974,0.27834
+149,HP:0001939,Small_Intestine_Terminal_Ileum,Abnormality of metabolism/homeostasis,0.57971,0.2368,0.344804
+150,HP:0001952,Adipose_Subcutaneous,Glucose intolerance,0.3586,0.4454,0.696694
+151,HP:0001952,Artery_Aorta,Glucose intolerance,0.23701,0.6252,1.0
+152,HP:0001952,Heart_Left_Ventricle,Glucose intolerance,0.67617,0.1699,0.23195
+153,HP:0001952,Kidney_Cortex,Glucose intolerance,0.92805,0.0324,0.0
+154,HP:0001952,Liver,Glucose intolerance,0.8199,0.0862,0.090756
+155,HP:0001952,Muscle_Skeletal,Glucose intolerance,0.83421,0.0787,0.078104
+156,HP:0001952,Pancreas,Glucose intolerance,0.52212,0.2822,0.42139
+157,HP:0001952,Whole_Blood,Glucose intolerance,0.67483,0.1708,0.233468
+158,HP:0001952,Brain_Hypothalamus,Glucose intolerance,0.6347,0.1974,0.27834
+159,HP:0001952,Small_Intestine_Terminal_Ileum,Glucose intolerance,0.57971,0.2368,0.344804
+160,HP:0002297,Adipose_Subcutaneous,Red hair,0.55403,0.2565,0.087949
+161,HP:0002297,Artery_Aorta,Red hair,0.0020111,2.6966,1.0
+162,HP:0002297,Heart_Left_Ventricle,Red hair,0.17693,0.7522,0.27323
+163,HP:0002297,Kidney_Cortex,Red hair,0.76343,0.1172,0.035882
+164,HP:0002297,Liver,Red hair,0.66598,0.1765,0.058047
+165,HP:0002297,Muscle_Skeletal,Red hair,0.24173,0.6167,0.222584
+166,HP:0002297,Pancreas,Red hair,0.55759,0.2537,0.086903
+167,HP:0002297,Whole_Blood,Red hair,0.95246,0.0212,0.0
+168,HP:0002297,Brain_Hypothalamus,Red hair,0.11643,0.9339,0.341145
+169,HP:0002297,Small_Intestine_Terminal_Ileum,Red hair,0.94451,0.0248,0.001346
+170,HP:0002591,Adipose_Subcutaneous,Polyphagia,0.55403,0.2565,0.087949
+171,HP:0002591,Artery_Aorta,Polyphagia,0.0020111,2.6966,1.0
+172,HP:0002591,Heart_Left_Ventricle,Polyphagia,0.17693,0.7522,0.27323
+173,HP:0002591,Kidney_Cortex,Polyphagia,0.76343,0.1172,0.035882
+174,HP:0002591,Liver,Polyphagia,0.66598,0.1765,0.058047
+175,HP:0002591,Muscle_Skeletal,Polyphagia,0.24173,0.6167,0.222584
+176,HP:0002591,Pancreas,Polyphagia,0.55759,0.2537,0.086903
+177,HP:0002591,Whole_Blood,Polyphagia,0.95246,0.0212,0.0
+178,HP:0002591,Brain_Hypothalamus,Polyphagia,0.11643,0.9339,0.341145
+179,HP:0002591,Small_Intestine_Terminal_Ileum,Polyphagia,0.94451,0.0248,0.001346
+180,HP:0003074,Adipose_Subcutaneous,Hyperglycemia,0.3586,0.4454,0.696694
+181,HP:0003074,Artery_Aorta,Hyperglycemia,0.23701,0.6252,1.0
+182,HP:0003074,Heart_Left_Ventricle,Hyperglycemia,0.67617,0.1699,0.23195
+183,HP:0003074,Kidney_Cortex,Hyperglycemia,0.92805,0.0324,0.0
+184,HP:0003074,Liver,Hyperglycemia,0.8199,0.0862,0.090756
+185,HP:0003074,Muscle_Skeletal,Hyperglycemia,0.83421,0.0787,0.078104
+186,HP:0003074,Pancreas,Hyperglycemia,0.52212,0.2822,0.42139
+187,HP:0003074,Whole_Blood,Hyperglycemia,0.67483,0.1708,0.233468
+188,HP:0003074,Brain_Hypothalamus,Hyperglycemia,0.6347,0.1974,0.27834
+189,HP:0003074,Small_Intestine_Terminal_Ileum,Hyperglycemia,0.57971,0.2368,0.344804
+190,HP:0003292,Adipose_Subcutaneous,Decreased serum leptin,0.55403,0.2565,0.087949
+191,HP:0003292,Artery_Aorta,Decreased serum leptin,0.0020111,2.6966,1.0
+192,HP:0003292,Heart_Left_Ventricle,Decreased serum leptin,0.17693,0.7522,0.27323
+193,HP:0003292,Kidney_Cortex,Decreased serum leptin,0.76343,0.1172,0.035882
+194,HP:0003292,Liver,Decreased serum leptin,0.66598,0.1765,0.058047
+195,HP:0003292,Muscle_Skeletal,Decreased serum leptin,0.24173,0.6167,0.222584
+196,HP:0003292,Pancreas,Decreased serum leptin,0.55759,0.2537,0.086903
+197,HP:0003292,Whole_Blood,Decreased serum leptin,0.95246,0.0212,0.0
+198,HP:0003292,Brain_Hypothalamus,Decreased serum leptin,0.11643,0.9339,0.341145
+199,HP:0003292,Small_Intestine_Terminal_Ileum,Decreased serum leptin,0.94451,0.0248,0.001346
+200,HP:0004323,Adipose_Subcutaneous,Abnormality of body weight,0.3586,0.4454,0.127239
+201,HP:0004323,Artery_Aorta,Abnormality of body weight,0.0020111,2.6966,1.0
+202,HP:0004323,Heart_Left_Ventricle,Abnormality of body weight,0.17693,0.7522,0.246181
+203,HP:0004323,Kidney_Cortex,Abnormality of body weight,0.76343,0.1172,0.0
+204,HP:0004323,Liver,Abnormality of body weight,0.66598,0.1765,0.02299
+205,HP:0004323,Muscle_Skeletal,Abnormality of body weight,0.24173,0.6167,0.19365
+206,HP:0004323,Pancreas,Abnormality of body weight,0.52212,0.2822,0.063968
+207,HP:0004323,Whole_Blood,Abnormality of body weight,0.67483,0.1708,0.02078
+208,HP:0004323,Brain_Hypothalamus,Abnormality of body weight,0.11643,0.9339,0.316624
+209,HP:0004323,Small_Intestine_Terminal_Ileum,Abnormality of body weight,0.57971,0.2368,0.046367
+210,HP:0004324,Adipose_Subcutaneous,Increased body weight,0.55403,0.2565,0.087949
+211,HP:0004324,Artery_Aorta,Increased body weight,0.0020111,2.6966,1.0
+212,HP:0004324,Heart_Left_Ventricle,Increased body weight,0.17693,0.7522,0.27323
+213,HP:0004324,Kidney_Cortex,Increased body weight,0.76343,0.1172,0.035882
+214,HP:0004324,Liver,Increased body weight,0.66598,0.1765,0.058047
+215,HP:0004324,Muscle_Skeletal,Increased body weight,0.24173,0.6167,0.222584
+216,HP:0004324,Pancreas,Increased body weight,0.55759,0.2537,0.086903
+217,HP:0004324,Whole_Blood,Increased body weight,0.95246,0.0212,0.0
+218,HP:0004324,Brain_Hypothalamus,Increased body weight,0.11643,0.9339,0.341145
+219,HP:0004324,Small_Intestine_Terminal_Ileum,Increased body weight,0.94451,0.0248,0.001346
+220,HP:0004421,Adipose_Subcutaneous,Elevated systolic blood pressure,0.3586,0.4454,0.696694
+221,HP:0004421,Artery_Aorta,Elevated systolic blood pressure,0.23701,0.6252,1.0
+222,HP:0004421,Heart_Left_Ventricle,Elevated systolic blood pressure,0.67617,0.1699,0.23195
+223,HP:0004421,Kidney_Cortex,Elevated systolic blood pressure,0.92805,0.0324,0.0
+224,HP:0004421,Liver,Elevated systolic blood pressure,0.8199,0.0862,0.090756
+225,HP:0004421,Muscle_Skeletal,Elevated systolic blood pressure,0.83421,0.0787,0.078104
+226,HP:0004421,Pancreas,Elevated systolic blood pressure,0.52212,0.2822,0.42139
+227,HP:0004421,Whole_Blood,Elevated systolic blood pressure,0.67483,0.1708,0.233468
+228,HP:0004421,Brain_Hypothalamus,Elevated systolic blood pressure,0.6347,0.1974,0.27834
+229,HP:0004421,Small_Intestine_Terminal_Ileum,Elevated systolic blood pressure,0.57971,0.2368,0.344804
+230,HP:0004972,Adipose_Subcutaneous,Elevated mean arterial pressure,0.3586,0.4454,0.696694
+231,HP:0004972,Artery_Aorta,Elevated mean arterial pressure,0.23701,0.6252,1.0
+232,HP:0004972,Heart_Left_Ventricle,Elevated mean arterial pressure,0.67617,0.1699,0.23195
+233,HP:0004972,Kidney_Cortex,Elevated mean arterial pressure,0.92805,0.0324,0.0
+234,HP:0004972,Liver,Elevated mean arterial pressure,0.8199,0.0862,0.090756
+235,HP:0004972,Muscle_Skeletal,Elevated mean arterial pressure,0.83421,0.0787,0.078104
+236,HP:0004972,Pancreas,Elevated mean arterial pressure,0.52212,0.2822,0.42139
+237,HP:0004972,Whole_Blood,Elevated mean arterial pressure,0.67483,0.1708,0.233468
+238,HP:0004972,Brain_Hypothalamus,Elevated mean arterial pressure,0.6347,0.1974,0.27834
+239,HP:0004972,Small_Intestine_Terminal_Ileum,Elevated mean arterial pressure,0.57971,0.2368,0.344804
+240,HP:0005117,Adipose_Subcutaneous,Elevated diastolic blood pressure,0.3586,0.4454,0.696694
+241,HP:0005117,Artery_Aorta,Elevated diastolic blood pressure,0.23701,0.6252,1.0
+242,HP:0005117,Heart_Left_Ventricle,Elevated diastolic blood pressure,0.67617,0.1699,0.23195
+243,HP:0005117,Kidney_Cortex,Elevated diastolic blood pressure,0.92805,0.0324,0.0
+244,HP:0005117,Liver,Elevated diastolic blood pressure,0.8199,0.0862,0.090756
+245,HP:0005117,Muscle_Skeletal,Elevated diastolic blood pressure,0.83421,0.0787,0.078104
+246,HP:0005117,Pancreas,Elevated diastolic blood pressure,0.52212,0.2822,0.42139
+247,HP:0005117,Whole_Blood,Elevated diastolic blood pressure,0.67483,0.1708,0.233468
+248,HP:0005117,Brain_Hypothalamus,Elevated diastolic blood pressure,0.6347,0.1974,0.27834
+249,HP:0005117,Small_Intestine_Terminal_Ileum,Elevated diastolic blood pressure,0.57971,0.2368,0.344804
+250,HP:0005978,Adipose_Subcutaneous,Type II diabetes mellitus,0.3586,0.4454,0.696694
+251,HP:0005978,Artery_Aorta,Type II diabetes mellitus,0.23701,0.6252,1.0
+252,HP:0005978,Heart_Left_Ventricle,Type II diabetes mellitus,0.67617,0.1699,0.23195
+253,HP:0005978,Kidney_Cortex,Type II diabetes mellitus,0.92805,0.0324,0.0
+254,HP:0005978,Liver,Type II diabetes mellitus,0.8199,0.0862,0.090756
+255,HP:0005978,Muscle_Skeletal,Type II diabetes mellitus,0.83421,0.0787,0.078104
+256,HP:0005978,Pancreas,Type II diabetes mellitus,0.52212,0.2822,0.42139
+257,HP:0005978,Whole_Blood,Type II diabetes mellitus,0.67483,0.1708,0.233468
+258,HP:0005978,Brain_Hypothalamus,Type II diabetes mellitus,0.6347,0.1974,0.27834
+259,HP:0005978,Small_Intestine_Terminal_Ileum,Type II diabetes mellitus,0.57971,0.2368,0.344804
+260,HP:0008163,Adipose_Subcutaneous,Decreased circulating cortisol level,0.55403,0.2565,0.087949
+261,HP:0008163,Artery_Aorta,Decreased circulating cortisol level,0.0020111,2.6966,1.0
+262,HP:0008163,Heart_Left_Ventricle,Decreased circulating cortisol level,0.17693,0.7522,0.27323
+263,HP:0008163,Kidney_Cortex,Decreased circulating cortisol level,0.76343,0.1172,0.035882
+264,HP:0008163,Liver,Decreased circulating cortisol level,0.66598,0.1765,0.058047
+265,HP:0008163,Muscle_Skeletal,Decreased circulating cortisol level,0.24173,0.6167,0.222584
+266,HP:0008163,Pancreas,Decreased circulating cortisol level,0.55759,0.2537,0.086903
+267,HP:0008163,Whole_Blood,Decreased circulating cortisol level,0.95246,0.0212,0.0
+268,HP:0008163,Brain_Hypothalamus,Decreased circulating cortisol level,0.11643,0.9339,0.341145
+269,HP:0008163,Small_Intestine_Terminal_Ileum,Decreased circulating cortisol level,0.94451,0.0248,0.001346
+270,HP:0011013,Adipose_Subcutaneous,Abnormal circulating carbohydrate concentration,0.3586,0.4454,0.696694
+271,HP:0011013,Artery_Aorta,Abnormal circulating carbohydrate concentration,0.23701,0.6252,1.0
+272,HP:0011013,Heart_Left_Ventricle,Abnormal circulating carbohydrate concentration,0.67617,0.1699,0.23195
+273,HP:0011013,Kidney_Cortex,Abnormal circulating carbohydrate concentration,0.92805,0.0324,0.0
+274,HP:0011013,Liver,Abnormal circulating carbohydrate concentration,0.8199,0.0862,0.090756
+275,HP:0011013,Muscle_Skeletal,Abnormal circulating carbohydrate concentration,0.83421,0.0787,0.078104
+276,HP:0011013,Pancreas,Abnormal circulating carbohydrate concentration,0.52212,0.2822,0.42139
+277,HP:0011013,Whole_Blood,Abnormal circulating carbohydrate concentration,0.67483,0.1708,0.233468
+278,HP:0011013,Brain_Hypothalamus,Abnormal circulating carbohydrate concentration,0.6347,0.1974,0.27834
+279,HP:0011013,Small_Intestine_Terminal_Ileum,Abnormal circulating carbohydrate concentration,0.57971,0.2368,0.344804
+280,HP:0011014,Adipose_Subcutaneous,Abnormal glucose homeostasis,0.3586,0.4454,0.696694
+281,HP:0011014,Artery_Aorta,Abnormal glucose homeostasis,0.23701,0.6252,1.0
+282,HP:0011014,Heart_Left_Ventricle,Abnormal glucose homeostasis,0.67617,0.1699,0.23195
+283,HP:0011014,Kidney_Cortex,Abnormal glucose homeostasis,0.92805,0.0324,0.0
+284,HP:0011014,Liver,Abnormal glucose homeostasis,0.8199,0.0862,0.090756
+285,HP:0011014,Muscle_Skeletal,Abnormal glucose homeostasis,0.83421,0.0787,0.078104
+286,HP:0011014,Pancreas,Abnormal glucose homeostasis,0.52212,0.2822,0.42139
+287,HP:0011014,Whole_Blood,Abnormal glucose homeostasis,0.67483,0.1708,0.233468
+288,HP:0011014,Brain_Hypothalamus,Abnormal glucose homeostasis,0.6347,0.1974,0.27834
+289,HP:0011014,Small_Intestine_Terminal_Ileum,Abnormal glucose homeostasis,0.57971,0.2368,0.344804
+290,HP:0011015,Adipose_Subcutaneous,Abnormal blood glucose concentration,0.3586,0.4454,0.696694
+291,HP:0011015,Artery_Aorta,Abnormal blood glucose concentration,0.23701,0.6252,1.0
+292,HP:0011015,Heart_Left_Ventricle,Abnormal blood glucose concentration,0.67617,0.1699,0.23195
+293,HP:0011015,Kidney_Cortex,Abnormal blood glucose concentration,0.92805,0.0324,0.0
+294,HP:0011015,Liver,Abnormal blood glucose concentration,0.8199,0.0862,0.090756
+295,HP:0011015,Muscle_Skeletal,Abnormal blood glucose concentration,0.83421,0.0787,0.078104
+296,HP:0011015,Pancreas,Abnormal blood glucose concentration,0.52212,0.2822,0.42139
+297,HP:0011015,Whole_Blood,Abnormal blood glucose concentration,0.67483,0.1708,0.233468
+298,HP:0011015,Brain_Hypothalamus,Abnormal blood glucose concentration,0.6347,0.1974,0.27834
+299,HP:0011015,Small_Intestine_Terminal_Ileum,Abnormal blood glucose concentration,0.57971,0.2368,0.344804
+300,HP:0011748,Adipose_Subcutaneous,Adrenocorticotropic hormone deficiency,0.55403,0.2565,0.087949
+301,HP:0011748,Artery_Aorta,Adrenocorticotropic hormone deficiency,0.0020111,2.6966,1.0
+302,HP:0011748,Heart_Left_Ventricle,Adrenocorticotropic hormone deficiency,0.17693,0.7522,0.27323
+303,HP:0011748,Kidney_Cortex,Adrenocorticotropic hormone deficiency,0.76343,0.1172,0.035882
+304,HP:0011748,Liver,Adrenocorticotropic hormone deficiency,0.66598,0.1765,0.058047
+305,HP:0011748,Muscle_Skeletal,Adrenocorticotropic hormone deficiency,0.24173,0.6167,0.222584
+306,HP:0011748,Pancreas,Adrenocorticotropic hormone deficiency,0.55759,0.2537,0.086903
+307,HP:0011748,Whole_Blood,Adrenocorticotropic hormone deficiency,0.95246,0.0212,0.0
+308,HP:0011748,Brain_Hypothalamus,Adrenocorticotropic hormone deficiency,0.11643,0.9339,0.341145
+309,HP:0011748,Small_Intestine_Terminal_Ileum,Adrenocorticotropic hormone deficiency,0.94451,0.0248,0.001346
+310,HP:0012337,Adipose_Subcutaneous,Abnormal homeostasis,0.3586,0.4454,0.696694
+311,HP:0012337,Artery_Aorta,Abnormal homeostasis,0.23701,0.6252,1.0
+312,HP:0012337,Heart_Left_Ventricle,Abnormal homeostasis,0.67617,0.1699,0.23195
+313,HP:0012337,Kidney_Cortex,Abnormal homeostasis,0.92805,0.0324,0.0
+314,HP:0012337,Liver,Abnormal homeostasis,0.8199,0.0862,0.090756
+315,HP:0012337,Muscle_Skeletal,Abnormal homeostasis,0.83421,0.0787,0.078104
+316,HP:0012337,Pancreas,Abnormal homeostasis,0.52212,0.2822,0.42139
+317,HP:0012337,Whole_Blood,Abnormal homeostasis,0.67483,0.1708,0.233468
+318,HP:0012337,Brain_Hypothalamus,Abnormal homeostasis,0.6347,0.1974,0.27834
+319,HP:0012337,Small_Intestine_Terminal_Ileum,Abnormal homeostasis,0.57971,0.2368,0.344804
+320,HP:0020347,Adipose_Subcutaneous,Abnormal circulating monosaccharide concentration,0.3586,0.4454,0.696694
+321,HP:0020347,Artery_Aorta,Abnormal circulating monosaccharide concentration,0.23701,0.6252,1.0
+322,HP:0020347,Heart_Left_Ventricle,Abnormal circulating monosaccharide concentration,0.67617,0.1699,0.23195
+323,HP:0020347,Kidney_Cortex,Abnormal circulating monosaccharide concentration,0.92805,0.0324,0.0
+324,HP:0020347,Liver,Abnormal circulating monosaccharide concentration,0.8199,0.0862,0.090756
+325,HP:0020347,Muscle_Skeletal,Abnormal circulating monosaccharide concentration,0.83421,0.0787,0.078104
+326,HP:0020347,Pancreas,Abnormal circulating monosaccharide concentration,0.52212,0.2822,0.42139
+327,HP:0020347,Whole_Blood,Abnormal circulating monosaccharide concentration,0.67483,0.1708,0.233468
+328,HP:0020347,Brain_Hypothalamus,Abnormal circulating monosaccharide concentration,0.6347,0.1974,0.27834
+329,HP:0020347,Small_Intestine_Terminal_Ileum,Abnormal circulating monosaccharide concentration,0.57971,0.2368,0.344804
+330,HP:0031818,Adipose_Subcutaneous,Abnormal waist to hip ratio,0.3586,0.4454,0.696694
+331,HP:0031818,Artery_Aorta,Abnormal waist to hip ratio,0.23701,0.6252,1.0
+332,HP:0031818,Heart_Left_Ventricle,Abnormal waist to hip ratio,0.67617,0.1699,0.23195
+333,HP:0031818,Kidney_Cortex,Abnormal waist to hip ratio,0.92805,0.0324,0.0
+334,HP:0031818,Liver,Abnormal waist to hip ratio,0.8199,0.0862,0.090756
+335,HP:0031818,Muscle_Skeletal,Abnormal waist to hip ratio,0.83421,0.0787,0.078104
+336,HP:0031818,Pancreas,Abnormal waist to hip ratio,0.52212,0.2822,0.42139
+337,HP:0031818,Whole_Blood,Abnormal waist to hip ratio,0.67483,0.1708,0.233468
+338,HP:0031818,Brain_Hypothalamus,Abnormal waist to hip ratio,0.6347,0.1974,0.27834
+339,HP:0031818,Small_Intestine_Terminal_Ileum,Abnormal waist to hip ratio,0.57971,0.2368,0.344804
+340,HP:0031819,Adipose_Subcutaneous,Increased waist to hip ratio,0.3586,0.4454,0.696694
+341,HP:0031819,Artery_Aorta,Increased waist to hip ratio,0.23701,0.6252,1.0
+342,HP:0031819,Heart_Left_Ventricle,Increased waist to hip ratio,0.67617,0.1699,0.23195
+343,HP:0031819,Kidney_Cortex,Increased waist to hip ratio,0.92805,0.0324,0.0
+344,HP:0031819,Liver,Increased waist to hip ratio,0.8199,0.0862,0.090756
+345,HP:0031819,Muscle_Skeletal,Increased waist to hip ratio,0.83421,0.0787,0.078104
+346,HP:0031819,Pancreas,Increased waist to hip ratio,0.52212,0.2822,0.42139
+347,HP:0031819,Whole_Blood,Increased waist to hip ratio,0.67483,0.1708,0.233468
+348,HP:0031819,Brain_Hypothalamus,Increased waist to hip ratio,0.6347,0.1974,0.27834
+349,HP:0031819,Small_Intestine_Terminal_Ileum,Increased waist to hip ratio,0.57971,0.2368,0.344804
+350,HP:0032180,Adipose_Subcutaneous,Abnormal circulating metabolite concentration,0.3586,0.4454,0.696694
+351,HP:0032180,Artery_Aorta,Abnormal circulating metabolite concentration,0.23701,0.6252,1.0
+352,HP:0032180,Heart_Left_Ventricle,Abnormal circulating metabolite concentration,0.67617,0.1699,0.23195
+353,HP:0032180,Kidney_Cortex,Abnormal circulating metabolite concentration,0.92805,0.0324,0.0
+354,HP:0032180,Liver,Abnormal circulating metabolite concentration,0.8199,0.0862,0.090756
+355,HP:0032180,Muscle_Skeletal,Abnormal circulating metabolite concentration,0.83421,0.0787,0.078104
+356,HP:0032180,Pancreas,Abnormal circulating metabolite concentration,0.52212,0.2822,0.42139
+357,HP:0032180,Whole_Blood,Abnormal circulating metabolite concentration,0.67483,0.1708,0.233468
+358,HP:0032180,Brain_Hypothalamus,Abnormal circulating metabolite concentration,0.6347,0.1974,0.27834
+359,HP:0032180,Small_Intestine_Terminal_Ileum,Abnormal circulating metabolite concentration,0.57971,0.2368,0.344804
+360,HP:0040216,Adipose_Subcutaneous,Hypoinsulinemia,0.55403,0.2565,0.087949
+361,HP:0040216,Artery_Aorta,Hypoinsulinemia,0.0020111,2.6966,1.0
+362,HP:0040216,Heart_Left_Ventricle,Hypoinsulinemia,0.17693,0.7522,0.27323
+363,HP:0040216,Kidney_Cortex,Hypoinsulinemia,0.76343,0.1172,0.035882
+364,HP:0040216,Liver,Hypoinsulinemia,0.66598,0.1765,0.058047
+365,HP:0040216,Muscle_Skeletal,Hypoinsulinemia,0.24173,0.6167,0.222584
+366,HP:0040216,Pancreas,Hypoinsulinemia,0.55759,0.2537,0.086903
+367,HP:0040216,Whole_Blood,Hypoinsulinemia,0.95246,0.0212,0.0
+368,HP:0040216,Brain_Hypothalamus,Hypoinsulinemia,0.11643,0.9339,0.341145
+369,HP:0040216,Small_Intestine_Terminal_Ileum,Hypoinsulinemia,0.94451,0.0248,0.001346
+370,HP:0100738,Adipose_Subcutaneous,Abnormal eating behavior,0.55403,0.2565,0.087949
+371,HP:0100738,Artery_Aorta,Abnormal eating behavior,0.0020111,2.6966,1.0
+372,HP:0100738,Heart_Left_Ventricle,Abnormal eating behavior,0.17693,0.7522,0.27323
+373,HP:0100738,Kidney_Cortex,Abnormal eating behavior,0.76343,0.1172,0.035882
+374,HP:0100738,Liver,Abnormal eating behavior,0.66598,0.1765,0.058047
+375,HP:0100738,Muscle_Skeletal,Abnormal eating behavior,0.24173,0.6167,0.222584
+376,HP:0100738,Pancreas,Abnormal eating behavior,0.55759,0.2537,0.086903
+377,HP:0100738,Whole_Blood,Abnormal eating behavior,0.95246,0.0212,0.0
+378,HP:0100738,Brain_Hypothalamus,Abnormal eating behavior,0.11643,0.9339,0.341145
+379,HP:0100738,Small_Intestine_Terminal_Ileum,Abnormal eating behavior,0.94451,0.0248,0.001346
+380,HP:0430071,Adipose_Subcutaneous,Abnormal circulating organic compound concentration,0.3586,0.4454,0.696694
+381,HP:0430071,Artery_Aorta,Abnormal circulating organic compound concentration,0.23701,0.6252,1.0
+382,HP:0430071,Heart_Left_Ventricle,Abnormal circulating organic compound concentration,0.67617,0.1699,0.23195
+383,HP:0430071,Kidney_Cortex,Abnormal circulating organic compound concentration,0.92805,0.0324,0.0
+384,HP:0430071,Liver,Abnormal circulating organic compound concentration,0.8199,0.0862,0.090756
+385,HP:0430071,Muscle_Skeletal,Abnormal circulating organic compound concentration,0.83421,0.0787,0.078104
+386,HP:0430071,Pancreas,Abnormal circulating organic compound concentration,0.52212,0.2822,0.42139
+387,HP:0430071,Whole_Blood,Abnormal circulating organic compound concentration,0.67483,0.1708,0.233468
+388,HP:0430071,Brain_Hypothalamus,Abnormal circulating organic compound concentration,0.6347,0.1974,0.27834
+389,HP:0430071,Small_Intestine_Terminal_Ileum,Abnormal circulating organic compound concentration,0.57971,0.2368,0.344804
+390,HP:6000419,Adipose_Subcutaneous,Elevated circulating proinsulin concentration,0.55403,0.2565,0.087949
+391,HP:6000419,Artery_Aorta,Elevated circulating proinsulin concentration,0.0020111,2.6966,1.0
+392,HP:6000419,Heart_Left_Ventricle,Elevated circulating proinsulin concentration,0.17693,0.7522,0.27323
+393,HP:6000419,Kidney_Cortex,Elevated circulating proinsulin concentration,0.76343,0.1172,0.035882
+394,HP:6000419,Liver,Elevated circulating proinsulin concentration,0.66598,0.1765,0.058047
+395,HP:6000419,Muscle_Skeletal,Elevated circulating proinsulin concentration,0.24173,0.6167,0.222584
+396,HP:6000419,Pancreas,Elevated circulating proinsulin concentration,0.55759,0.2537,0.086903
+397,HP:6000419,Whole_Blood,Elevated circulating proinsulin concentration,0.95246,0.0212,0.0
+398,HP:6000419,Brain_Hypothalamus,Elevated circulating proinsulin concentration,0.11643,0.9339,0.341145
+399,HP:6000419,Small_Intestine_Terminal_Ileum,Elevated circulating proinsulin concentration,0.94451,0.0248,0.001346

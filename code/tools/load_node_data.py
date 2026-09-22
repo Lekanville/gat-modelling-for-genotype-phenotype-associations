@@ -10,6 +10,7 @@ def node_data(INPUT):
     drugs = f"{INPUT}/nodes/all_drug_features.csv"
     ancestry = f"{INPUT}/nodes/ancestry_nodes.csv"
     clinical_outcomes = f"{INPUT}/nodes/clinical_outcomes_final_cui.csv"
+    # clinical_outcomes = f"{INPUT}/nodes/phenotype_features.csv"
     genes = f"{INPUT}/nodes/genes_node_dedup_mapped.csv"
     pathway = f"{INPUT}/nodes/pathway_nodes.csv"
     tissues = f"{INPUT}/nodes/tissue_nodes.csv"

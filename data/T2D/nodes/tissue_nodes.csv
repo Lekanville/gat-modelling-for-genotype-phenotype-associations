@@ -1,0 +1,11 @@
+Tissue_ID,Is_Metabolic,Is_Excretory,Sys_Adipose,Sys_Cardiovascular,Sys_Digestive,Sys_Endocrine,Sys_Excretory,Sys_Immune,Sys_Musculoskeletal,Sys_Nervous
+Adipose_Subcutaneous,1,0,1,0,0,0,0,0,0,0
+Artery_Aorta,0,0,0,1,0,0,0,0,0,0
+Brain_Hypothalamus,0,0,0,0,0,0,0,0,0,1
+Heart_Left_Ventricle,0,0,0,1,0,0,0,0,0,0
+Kidney_Cortex,0,1,0,0,0,0,1,0,0,0
+Liver,1,0,0,0,1,0,0,0,0,0
+Muscle_Skeletal,1,0,0,0,0,0,0,0,1,0
+Pancreas,1,0,0,0,0,1,0,0,0,0
+Small_Intestine_Terminal_Ileum,1,0,0,0,1,0,0,0,0,0
+Whole_Blood,0,0,0,0,0,0,0,1,0,0

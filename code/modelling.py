@@ -14,7 +14,7 @@ from tools.load_node_data import node_data
 from tools.load_edge_data import edge_data
 from tools.create_nodes import nodes_init
 from tools.create_edges import edges_init
-from tools.viz import (audit_and_visualize_heterodata, plot_training_history)
+from tools.viz import (audit_and_visualize_heterodata, plot_training_history, plot_score_histogram, plot_roc_curve)
 from tools.train_utils import (
     deduplicate_variant_phenotype_edges,
     deduplicate_drug_side_effect_edges,
@@ -69,6 +69,13 @@ parser.add_argument(
     type=str,
     default='false',
     help='When true, restrict validation/test scoring to the relation implied by the selected prediction_type. This is a leakage-control setting for the held-out split, not a graph-wide relation filter.'
+)
+parser.add_argument(
+    '--negative_sampling_mode',
+    type=str,
+    default='source_aware',
+    choices=['source_aware', 'global'],
+    help='Choose whether negatives are sampled from a source-specific candidate pool or from the full destination set for the relation.'
 )
 
 
@@ -140,9 +147,12 @@ def restrict_one_edge_per_source(edge_index, mask):
     return kept
 
 
-def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, IGNORE_RELATIONS='', FOCUS_TEST_RELATION=False):
+def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, IGNORE_RELATIONS='', FOCUS_TEST_RELATION=False, NEGATIVE_SAMPLING_MODE='source_aware'):
 
     FOCUS_TEST_RELATION = parse_bool(FOCUS_TEST_RELATION)
+    NEGATIVE_SAMPLING_MODE = str(NEGATIVE_SAMPLING_MODE).strip().lower()
+    if NEGATIVE_SAMPLING_MODE not in {'source_aware', 'global'}:
+        NEGATIVE_SAMPLING_MODE = 'source_aware'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     torch.manual_seed(42)
     random.seed(42)
@@ -243,13 +253,18 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
     # Initialize Features & ID Mappings 
     data = HeteroData()
 
-    #Bbuilding the nides
+    # Building the nodes
     (variant_to_idx, tissue_to_idx, gene_to_idx, ancestry_to_idx, 
         clinical_outcomes_to_idx, pathway_to_idx, drug_to_idx, data) = nodes_init(data, df_variants, df_tissues, df_genes, 
                                                                    df_ancestry, df_clinical_outcomes, df_pathway, df_drugs)
+
+    # (variant_to_idx, ancestry_to_idx, clinical_outcomes_to_idx, data) = nodes_init(data, df_variants, df_tissues, df_genes, 
+    #                                                                    df_ancestry, df_clinical_outcomes, df_pathway, df_drugs)
     
     mappings = (variant_to_idx, tissue_to_idx, gene_to_idx, ancestry_to_idx, 
          clinical_outcomes_to_idx, pathway_to_idx, drug_to_idx)
+
+    # mappings = (variant_to_idx, ancestry_to_idx, clinical_outcomes_to_idx)
     
     # Building the edges
     data = edges_init(data, edge_dfs, mappings)
@@ -262,7 +277,9 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
     # The full clinical_outcome tensor still needs a full-length vector for indexing, but
     # the ancestral prior should be defined only on phenotype nodes that actually appear
     # in the variant-phenotype edges.
+    
     (_, _, _, ancestry_to_idx, clinical_outcomes_to_idx, _, _) = mappings
+    # (_, ancestry_to_idx, clinical_outcomes_to_idx) = mappings
     num_ancestry = len(ancestry_to_idx)
     phenotype_idx = set()
 
@@ -421,7 +438,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
         relations = supervised_relations if relations is None else relations
         out = {}
         for rel in relations:
-            pos, neg = relation_batch(data, rel, mask_key=mask_key, num_neg=4096)
+            pos, neg = relation_batch(data, rel, mask_key=mask_key, num_neg=4096, sampling_mode=NEGATIVE_SAMPLING_MODE)
             loss_rel, met = edge_loss_and_metrics(model, z, rel, pos, neg)
             out['/'.join(rel)] = {'loss': loss_rel.item(), **met}
         return out
@@ -468,11 +485,26 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
         losses_by_rel = {}
         metrics = {}
         for rel in supervised_relations:
-            pos, neg = relation_batch(data, rel, mask_key='train_mask', num_neg=2048)
+            pos, neg, neg_stats = relation_batch(
+                data,
+                rel,
+                mask_key='train_mask',
+                num_neg=2048,
+                return_stats=True,
+                sampling_mode=NEGATIVE_SAMPLING_MODE,
+            )
             loss_rel, met = edge_loss_and_metrics(model, z, rel, pos, neg)
+            met['negative_sampling_stats'] = neg_stats
             losses.append(loss_rel)
             losses_by_rel[rel] = loss_rel
             metrics['/'.join(rel)] = met
+            if epoch % 5 == 0:
+                print(
+                    f"Relation {relation_name[rel]} | mode={neg_stats['sampling_mode']} | "
+                    f"n_sources={neg_stats['n_sources']} | avg_candidate_pool={neg_stats['candidate_pool_size_avg']:.1f} | "
+                    f"sampled_neg={neg_stats['sampled_negatives']} | mean_neg_per_source={neg_stats['mean_negatives_per_source']:.2f} | "
+                    f"confusion={met['confusion_matrix']}"
+                )
 
         use_domain_adv = rel_variant in supervised_relations
         if use_domain_adv:
@@ -528,9 +560,13 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
                 msg += f"| dom_loss={dom_loss.item():.3f} "
             for rel in supervised_relations:
                 rel_key = '/'.join(rel)
+                stats = metrics[rel_key]['negative_sampling_stats']
                 msg += (
                     f"| {relation_name[rel]} train_loss={losses_by_rel[rel].item():.3f} "
                     f"AUROC={metrics[rel_key]['auroc']:.3f} AP={metrics[rel_key]['ap']:.3f} "
+                    f"n_pos={metrics[rel_key]['n_pos']} n_neg={metrics[rel_key]['n_neg']} "
+                    f"n_sources={stats['n_sources']} avg_pool={stats['candidate_pool_size_avg']:.1f} "
+                    f"mean_neg_per_source={stats['mean_negatives_per_source']:.2f} mode={stats['sampling_mode']}"
                 )
             print(msg)
             # model.encoder.print_route_attention_summary(limit=None)
@@ -557,6 +593,34 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
 
     val = evaluate('val_mask', relations=test_relations if FOCUS_TEST_RELATION else supervised_relations)
     test = evaluate('test_mask', relations=test_relations if FOCUS_TEST_RELATION else supervised_relations)
+    for rel_key, results in val.items():
+        if 'positive_scores' in results and 'negative_scores' in results:
+            plot_score_histogram(
+                results['positive_scores'],
+                results['negative_scores'],
+                str(Path(OUTPUT) / f'{rel_key.replace("/", "_")}_val_score_hist.png'),
+                title=f'{rel_key} validation score histogram',
+            )
+            plot_roc_curve(
+                results['positive_scores'],
+                results['negative_scores'],
+                str(Path(OUTPUT) / f'{rel_key.replace("/", "_")}_val_roc.png'),
+                title=f'{rel_key} validation ROC curve',
+            )
+    for rel_key, results in test.items():
+        if 'positive_scores' in results and 'negative_scores' in results:
+            plot_score_histogram(
+                results['positive_scores'],
+                results['negative_scores'],
+                str(Path(OUTPUT) / f'{rel_key.replace("/", "_")}_test_score_hist.png'),
+                title=f'{rel_key} test score histogram',
+            )
+            plot_roc_curve(
+                results['positive_scores'],
+                results['negative_scores'],
+                str(Path(OUTPUT) / f'{rel_key.replace("/", "_")}_test_roc.png'),
+                title=f'{rel_key} test ROC curve',
+            )
     print(f"VAL ({PREDICTION_TYPE}):", val)
     print(f"TEST ({PREDICTION_TYPE}):", test)
     print("\n" + model.encoder.route_attention_report(

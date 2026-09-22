@@ -40,6 +40,12 @@ srun python code/modelling.py --input_directory data \
 --ancestry_test unspecified \
 --prediction_type variant_phenotype \
 --output_directory output/output_var_phen_random \
-# --focus_test_relation True
+--focus_test_relation False \
+--negative_sampling_mode source_aware \
+--ignore_relations 'gene,interacts_with,gene|variant,maps_to,gene|drug,causes,clinical_outcome|drug,treats,clinical_outcome|
+ancestry,prevalent_in,clinical_outcome|clinical_outcome,lin_similarity_with,clinical_outcome|
+clinical_outcome,genetically_correlated,clinical_outcome|drug,targets,gene|gene,belongs_to,pathway|
+gene,associated_with,clinical_outcome|gene,expressed_in,tissue|tissue,enriched_for,clinical_outcome|
+variant,observed_in,ancestry'
 
 # --ignore_relations "drug,treats,clinical_outcome" \

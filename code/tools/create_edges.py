@@ -38,6 +38,7 @@ def edges_init(data, edge_dfs, mappings):
     # Unpack dictionaries for readability
     (variant_to_idx, tissue_to_idx, gene_to_idx, ancestry_to_idx, 
          clinical_outcomes_to_idx, pathway_to_idx, drug_to_idx) = mappings
+    # (variant_to_idx, ancestry_to_idx, clinical_outcomes_to_idx) = mappings
 
     # --- 1. Ancestry -> Clinical Outcome ---
     idx, w = process_edge_data(df_ancestry_phenotype, 'ancestry', 'cui', ancestry_to_idx, clinical_outcomes_to_idx, weight_col='prevalence')

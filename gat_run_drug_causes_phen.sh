@@ -40,6 +40,7 @@ srun python code/modelling.py --input_directory data \
 --ancestry_test unspecified \
 --prediction_type drug_causes_side_effect \
 --output_directory output/output_drug_causes_phen \
-# --focus_test_relation True
+--focus_test_relation False \
+--negative_sampling_mode source_aware \
 
 # --ignore_relations "drug,treats,clinical_outcome" \

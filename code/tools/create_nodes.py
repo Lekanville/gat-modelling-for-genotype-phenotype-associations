@@ -88,7 +88,10 @@ def nodes_init(data, df_variants, df_tissues, df_genes, df_ancestry, df_clinical
     df_variants['CADD_Score'] = scaler.fit_transform(df_variants[['CADD_Score']])
     variant_rsids = df_variants['rsid'].tolist()
     variant_to_idx = {rsid: i for i, rsid in enumerate(variant_rsids)}
+    # other_variant_cols = [col for col in df_variants.columns if col != 'rsid']
+    # all_cols = ['rsid'] + other_variant_cols
     variant_features_df = df_variants.drop(columns=['rsid'])
+    # variant_features_df = df_variants.drop(columns=['rsid'])
     data['variant'].x = torch.tensor(variant_features_df.values, dtype=torch.float32)
 
     # --- TISSUE NODES ---

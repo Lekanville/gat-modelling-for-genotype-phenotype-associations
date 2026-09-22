@@ -35,12 +35,25 @@ export PYTHON_START_METHOD='forkserver'
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export TF_CPP_MIN_LOG_LEVEL=1
 
-srun python code/modelling.py --input_directory data \
+srun python code/modelling.py --input_directory data/T2D_and_Alzheimer \
 --ancestry_val EAS \
 --ancestry_test AMR \
 --prediction_type variant_phenotype \
 --output_directory output/output_var_phen_anc_focus \
---focus_test_relation True \
-# --ignore_relations "gene,interacts_with,gene|variant,maps_to,gene|drug,causes,clinical_outcome|drug,treats,clinical_outcome" \
+--focus_test_relation False \
+--negative_sampling_mode source_aware \
 
+# --ignore_relations 'gene,interacts_with,gene|variant,maps_to,gene|drug,causes,clinical_outcome|drug,treats,clinical_outcome|
+# ancestry,prevalent_in,clinical_outcome|clinical_outcome,lin_similarity_with,clinical_outcome|
+# clinical_outcome,genetically_correlated,clinical_outcome|drug,targets,gene|gene,belongs_to,pathway|
+# gene,associated_with,clinical_outcome|gene,expressed_in,tissue|tissue,enriched_for,clinical_outcome|
+# variant,observed_in,ancestry'
+
+# --ignore_relations 'gene,interacts_with,gene|variant,maps_to,gene|drug,causes,clinical_outcome|drug,treats,clinical_outcome|
+# ancestry,prevalent_in,clinical_outcome|clinical_outcome,lin_similarity_with,clinical_outcome|
+# clinical_outcome,genetically_correlated,clinical_outcome|ancestry,prevalent_in,clinical_outcome|
+# drug,targets,gene|gene,belongs_to,pathway|gene,associated_with,clinical_outcome|gene,expressed_in,tissue|
+# tissue,enriched_for,clinical_outcome|variant,observed_in,ancestry|variant,associated_with,clinical_outcome'
+
+# --ignore_relations 'variant,associated_with,clinical_outcome' \
 # --ignore_relations "drug,treats,clinical_outcome" \
