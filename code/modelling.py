@@ -39,7 +39,7 @@ from tools.inference_utils import (
     topk_side_effect_for_drug,
     polypharmacy_risk,
 )
-
+from tools.process_utils import parse_bool, apply_relation_filters, restrict_one_edge_per_source
 
 parser = argparse.ArgumentParser(description= "A script to filter data")
 parser.add_argument('-i', '--input_directory', type=str, required=True, help= 'The input datasets folder')
@@ -77,74 +77,6 @@ parser.add_argument(
     choices=['source_aware', 'global'],
     help='Choose whether negatives are sampled from a source-specific candidate pool or from the full destination set for the relation.'
 )
-
-
-def parse_bool(value):
-    if isinstance(value, bool):
-        return value
-    if value is None:
-        return False
-    return str(value).strip().lower() in {'1', 'true', 'yes', 'y', 'on'}
-
-
-def parse_relation_string(value):
-    if value is None or value == '':
-        return set()
-    raw = str(value).strip()
-    if not raw or raw.lower() in {'none', 'all'}:
-        return set()
-
-    # Treat each relation tuple as a separate group and only split within each tuple.
-    # Accept either semicolon or pipe separators between tuples, and commas within a tuple.
-    raw = raw.replace(';', '|').replace('-', ',')
-    groups = [group.strip() for group in raw.split('|') if group.strip()]
-
-    out = set()
-    for group in groups:
-        tokens = [token.strip().strip("()[]'\"") for token in group.split(',') if token.strip()]
-        if len(tokens) == 3:
-            out.add(tuple(tokens))
-    return out
-
-
-def drop_relation_types(data, relations_to_drop):
-    relations_to_drop = {tuple(rel) for rel in relations_to_drop}
-    for rel in list(data.edge_types):
-        if tuple(rel) in relations_to_drop:
-            del data[rel]
-    return data
-
-
-def apply_relation_filters(data, ignore_relations=''):
-    ignored = parse_relation_string(ignore_relations)
-    if ignored:
-        data = drop_relation_types(data, ignored)
-    return data
-
-
-def restrict_one_edge_per_source(edge_index, mask):
-    """Keep exactly one edge per source node in the selected mask.
-
-    This is used only for validation/test edges after the usual source-aware split.
-    Training masks are left untouched, so the graph keeps the original split semantics.
-    """
-    if edge_index is None or edge_index.numel() == 0:
-        return mask.clone()
-
-    selected_idx = torch.nonzero(mask, as_tuple=False).flatten()
-    if selected_idx.numel() == 0:
-        return mask.clone()
-
-    source_ids = edge_index[0, selected_idx]
-    kept = torch.zeros_like(mask, dtype=torch.bool)
-    seen = set()
-    for idx, src in zip(selected_idx.tolist(), source_ids.tolist()):
-        src_id = int(src)
-        if src_id in seen:
-            continue
-        seen.add(src_id)
-        kept[idx] = True
-    return kept
 
 
 def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, IGNORE_RELATIONS='', FOCUS_TEST_RELATION=False, NEGATIVE_SAMPLING_MODE='source_aware'):
@@ -402,7 +334,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
                     data[rel].train_mask = tr
                     data[rel].val_mask = va
                     data[rel].test_mask = te
-                    summarize_split('Variant-phenotype', data[rel].edge_index, tr, va, te)
+                    summarize_split('Variant-phenotype', data[rel].edge_index, tr, va, te, source_name='variant')
                 else:
                     source_name_by_node = {int(v): k for k, v in drug_to_idx.items()}
                     tr, va, te = source_split_masks_from_mapping(data[rel].edge_index, source_name_by_node, drug_split_map)
