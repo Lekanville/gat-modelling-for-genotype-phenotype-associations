@@ -364,15 +364,18 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
     opt = torch.optim.AdamW(model.parameters(), lr=2e-3, weight_decay=1e-4)
 
     @torch.no_grad()
-    def evaluate(mask_key='val_mask', relations=None):
+    def evaluate(mask_key='val_mask', relations=None, threshold_overrides=None):
         model.eval()
         z = model(data)
         relations = supervised_relations if relations is None else relations
         out = {}
+        threshold_overrides = threshold_overrides or {}
         for rel in relations:
-            pos, neg = relation_batch(data, rel, mask_key=mask_key, num_neg=4096, sampling_mode=NEGATIVE_SAMPLING_MODE)
-            loss_rel, met = edge_loss_and_metrics(model, z, rel, pos, neg)
-            out['/'.join(rel)] = {'loss': loss_rel.item(), **met}
+            rel_key = '/'.join(rel)
+            pos, neg = relation_batch(data, rel, mask_key=mask_key, num_neg=2048, sampling_mode=NEGATIVE_SAMPLING_MODE)
+            threshold = threshold_overrides.get(rel_key)
+            loss_rel, met = edge_loss_and_metrics(model, z, rel, pos, neg, threshold=threshold)
+            out[rel_key] = {'loss': loss_rel.item(), **met}
         return out
 
     ###############################################################################
@@ -421,7 +424,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
                 data,
                 rel,
                 mask_key='train_mask',
-                num_neg=2048,
+                num_neg=512,
                 return_stats=True,
                 sampling_mode=NEGATIVE_SAMPLING_MODE,
             )
@@ -508,7 +511,8 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
     ############################################
 
     val = evaluate('val_mask', relations=test_relations if FOCUS_TEST_RELATION else supervised_relations)
-    test = evaluate('test_mask', relations=test_relations if FOCUS_TEST_RELATION else supervised_relations)
+    val_best_thresholds = {rel_key: results['best_threshold'] for rel_key, results in val.items()}
+    test = evaluate('test_mask', relations=test_relations if FOCUS_TEST_RELATION else supervised_relations, threshold_overrides=val_best_thresholds)
     for rel_key, results in val.items():
         if 'positive_scores' in results and 'negative_scores' in results:
             plot_score_histogram(
@@ -537,10 +541,18 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
                 str(Path(OUTPUT) / f'{rel_key.replace("/", "_")}_test_roc.png'),
                 title=f'{rel_key} test ROC curve',
             )
+    print(f"VAL ({PREDICTION_TYPE}):")
+    for rel_key, results in val.items():
+        print(
+            f"{rel_key}: loss={results['loss']:.6f}, auroc={results['auroc']:.6f}, ap={results['ap']:.6f}, "
+            f"best_threshold={results['best_threshold']:.4f}, precision={results['precision']:.4f}, recall={results['recall']:.4f}, f1={results['f1']:.4f}, "
+            f"n_pos={results['n_pos']}, n_neg={results['n_neg']}"
+        )
     print(f"TEST ({PREDICTION_TYPE}):")
     for rel_key, results in test.items():
         print(
             f"{rel_key}: loss={results['loss']:.6f}, auroc={results['auroc']:.6f}, ap={results['ap']:.6f}, "
+            f"best_threshold={results['best_threshold']:.4f}, precision={results['precision']:.4f}, recall={results['recall']:.4f}, f1={results['f1']:.4f}, "
             f"n_pos={results['n_pos']}, n_neg={results['n_neg']}, "
             f"positive_scores={results['positive_scores']}, negative_scores={results['negative_scores']}"
         )

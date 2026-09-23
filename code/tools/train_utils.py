@@ -1,6 +1,7 @@
 import torch
 import pandas as pd
 from torch import nn
+from torch.nn import functional as F
 from torch_geometric.utils import negative_sampling
 from torchmetrics.classification import BinaryAUROC, BinaryAveragePrecision
 
@@ -201,7 +202,49 @@ def compute_confusion_matrix(logits, labels, threshold=0.5):
     }
 
 
-def edge_loss_and_metrics(model, z, rel, pos, neg):
+def select_best_threshold(pos_scores, neg_scores, n_candidates=200):
+    """Choose the threshold that maximizes F1 on the observed positive/negative scores."""
+    pos_scores = pos_scores.float().reshape(-1)
+    neg_scores = neg_scores.float().reshape(-1)
+    if pos_scores.numel() == 0 or neg_scores.numel() == 0:
+        return 0.5, 0.0, 0.0, 0.0
+
+    all_scores = torch.cat([pos_scores, neg_scores])
+    labels = torch.cat([
+        torch.ones_like(pos_scores, dtype=torch.long),
+        torch.zeros_like(neg_scores, dtype=torch.long),
+    ])
+
+    if all_scores.numel() > n_candidates:
+        threshold_values = torch.linspace(all_scores.min().item(), all_scores.max().item(), steps=n_candidates)
+    else:
+        threshold_values = torch.unique(all_scores)
+
+    best_threshold = 0.5
+    best_precision = 0.0
+    best_recall = 0.0
+    best_f1 = 0.0
+
+    for threshold in threshold_values:
+        preds = (all_scores >= threshold).long()
+        tp = ((preds == 1) & (labels == 1)).sum().float().item()
+        fp = ((preds == 1) & (labels == 0)).sum().float().item()
+        fn = ((preds == 0) & (labels == 1)).sum().float().item()
+
+        precision = tp / max(tp + fp, 1)
+        recall = tp / max(tp + fn, 1)
+        f1 = 2.0 * precision * recall / max(precision + recall, 1e-12)
+
+        if f1 > best_f1:
+            best_threshold = float(threshold)
+            best_precision = precision
+            best_recall = recall
+            best_f1 = f1
+
+    return best_threshold, best_precision, best_recall, best_f1
+
+
+def edge_loss_and_metrics(model, z, rel, pos, neg, threshold=None):
     pos_logit = model.link_logits(z, pos, rel)
     neg_logit = model.link_logits(z, neg, rel)
 
@@ -209,15 +252,34 @@ def edge_loss_and_metrics(model, z, rel, pos, neg):
     y = torch.cat([torch.ones_like(pos_logit), torch.zeros_like(neg_logit)])
     logits = torch.cat([pos_logit, neg_logit])
 
-    loss = bce(logits, y)
+    pos_count = float(pos_logit.numel())
+    neg_count = float(neg_logit.numel())
+    if pos_count > 0 and neg_count > 0:
+        pos_weight = max(neg_count / max(pos_count, 1.0), 1.0)
+        weight_tensor = torch.full_like(logits, pos_weight, device=logits.device)
+        loss = F.binary_cross_entropy_with_logits(logits, y.float(), pos_weight=weight_tensor)
+    else:
+        loss = bce(logits, y)
 
     with torch.no_grad():
         auroc.reset()
         ap.reset()
-        # Compute metrics without resetting inside the batch loop
         auroc_val = auroc(logits, y.int()).item()
         ap_val = ap(logits, y.int()).item()
-        conf_matrix = compute_confusion_matrix(logits, y, threshold=0.5)
+
+        if threshold is None:
+            selected_threshold, precision, recall, f1 = select_best_threshold(pos_logit, neg_logit)
+        else:
+            selected_threshold = float(threshold)
+            preds = (logits >= selected_threshold).long()
+            tp = ((preds == 1) & (y == 1)).sum().float().item()
+            fp = ((preds == 1) & (y == 0)).sum().float().item()
+            fn = ((preds == 0) & (y == 1)).sum().float().item()
+            precision = tp / max(tp + fp, 1)
+            recall = tp / max(tp + fn, 1)
+            f1 = 2.0 * precision * recall / max(precision + recall, 1e-12)
+
+        conf_matrix = compute_confusion_matrix(logits, y, threshold=selected_threshold)
 
     return loss, {
         'auroc': auroc_val,
@@ -227,4 +289,8 @@ def edge_loss_and_metrics(model, z, rel, pos, neg):
         'confusion_matrix': conf_matrix,
         'positive_scores': pos_logit.detach().cpu(),
         'negative_scores': neg_logit.detach().cpu(),
+        'best_threshold': float(selected_threshold),
+        'precision': float(precision),
+        'recall': float(recall),
+        'f1': float(f1),
     }
