@@ -59,7 +59,7 @@ def audit_and_visualize_heterodata(data, output_dir, ignored_relations='', origi
 
     ignored_set = _parse_relation_tokens(ignored_relations)
     if ignored_set and original_edge_counts is not None:
-        print("\n[Ignored Edge Relations]")
+        print("\n[Relation Filters Applied]")
         ignored_labels = []
         ignored_values = []
         for rel, num_edges in sorted(original_edge_counts.items(), key=lambda x: str(x[0])):
@@ -67,13 +67,13 @@ def audit_and_visualize_heterodata(data, output_dir, ignored_relations='', origi
                 label = f"{rel[0]} -> {rel[1]} -> {rel[2]}"
                 ignored_labels.append(label)
                 ignored_values.append(num_edges)
-                print(f"  - {label:<45}: {num_edges} edges | Status: Ignored")
+                print(f"  - {label:<45}: {num_edges} edges | Status: Filtered")
 
         if ignored_labels:
             plt.figure(figsize=(12, 6))
             sns.barplot(x=ignored_values, y=ignored_labels, hue=ignored_labels, palette="Reds", legend=False)
             plt.xscale("log")
-            plt.title("Ignored Edge Relations")
+            plt.title("Relation Filters Applied")
             plt.xlabel("Original Number of Edges (Log Scale)")
             plt.tight_layout()
             plt.savefig(f"{output_dir}/audit_ignored_edges.png")
@@ -92,13 +92,20 @@ def audit_and_visualize_heterodata(data, output_dir, ignored_relations='', origi
     plt.close()
 
     # --- VISUALIZATION 2: Edge Density Bar Plot ---
-    plot_labels = edge_names + [f"IGNORED: {rel[0]} -> {rel[1]} -> {rel[2]}" for rel in sorted(ignored_set, key=lambda x: str(x)) if tuple(rel) not in {tuple(edge) for edge in data.edge_types}]
-    plot_counts = edge_counts + [original_edge_counts.get(tuple(rel), 0) for rel in sorted(ignored_set, key=lambda x: str(x)) if tuple(rel) not in {tuple(edge) for edge in data.edge_types}]
+    if ignored_set:
+        plot_labels = edge_names + [f"FILTERED: {rel[0]} -> {rel[1]} -> {rel[2]}" for rel in sorted(ignored_set, key=lambda x: str(x)) if tuple(rel) not in {tuple(edge) for edge in data.edge_types}]
+        plot_counts = edge_counts + [original_edge_counts.get(tuple(rel), 0) for rel in sorted(ignored_set, key=lambda x: str(x)) if tuple(rel) not in {tuple(edge) for edge in data.edge_types}]
+        title = "Log-Scale Count of Included and Filtered Edge Relations"
+    else:
+        plot_labels = edge_names
+        plot_counts = edge_counts
+        title = "Log-Scale Count of Included Edge Relations"
+
     if plot_labels:
         plt.figure(figsize=(12, 6))
         sns.barplot(x=plot_counts, y=plot_labels, hue=plot_labels, palette="magma", legend=False)
         plt.xscale("log")
-        plt.title("Log-Scale Count of Included and Ignored Edge Relations")
+        plt.title(title)
         plt.xlabel("Number of Edges (Log Scale)")
         plt.tight_layout()
         plt.savefig(f"{output_dir}/audit_edge_counts.png")
@@ -114,10 +121,10 @@ def plot_score_histogram(pos_scores, neg_scores, output_path, title='Positive vs
         return
 
     plt.figure(figsize=(9, 5))
-    plt.hist(pos_scores, bins=40, alpha=0.7, color='tab:green', label='positive')
-    plt.hist(neg_scores, bins=40, alpha=0.7, color='tab:red', label='negative')
+    plt.hist(pos_scores, bins=40, density=True, alpha=0.7, color='tab:green', label='positive')
+    plt.hist(neg_scores, bins=40, density=True, alpha=0.7, color='tab:red', label='negative')
     plt.xlabel('score')
-    plt.ylabel('count')
+    plt.ylabel('density')
     plt.title(title)
     plt.legend()
     plt.tight_layout()

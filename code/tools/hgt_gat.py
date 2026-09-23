@@ -106,33 +106,16 @@ def source_split_masks_from_mapping(edge_index, source_name_by_node, source_to_s
 
 
 def summarize_split(label, edge_index, tr, va, te, source_name=None):
-    """Print a consistent train/val/test summary for a source-based split."""
+    """Print a compact train/val/test edge-count summary for a source-based split."""
     counts = {
         'train_edges': int(tr.sum()),
         'val_edges': int(va.sum()),
         'test_edges': int(te.sum()),
     }
-    if source_name is not None:
-        unique_counts = {
-            'train_unique_sources': int(torch.unique(edge_index[0, tr]).numel()),
-            'val_unique_sources': int(torch.unique(edge_index[0, va]).numel()),
-            'test_unique_sources': int(torch.unique(edge_index[0, te]).numel()),
-        }
-        print(
-            f"{label} source-stratified masks: "
-            f"train={counts['train_edges']}, val={counts['val_edges']}, test={counts['test_edges']}"
-        )
-        print(
-            f"{label} split source counts: "
-            f"train={unique_counts['train_unique_sources']}, "
-            f"val={unique_counts['val_unique_sources']}, "
-            f"test={unique_counts['test_unique_sources']}"
-        )
-    else:
-        print(
-            f"{label} final masks: "
-            f"train={counts['train_edges']}, val={counts['val_edges']}, test={counts['test_edges']}"
-        )
+    print(
+        f"{label} split masks: "
+        f"train={counts['train_edges']}, val={counts['val_edges']}, test={counts['test_edges']}"
+    )
 
 ############################################
 # HGT Encoder + Multi-relation Scorers #

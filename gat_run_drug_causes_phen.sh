@@ -35,7 +35,7 @@ export PYTHON_START_METHOD='forkserver'
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export TF_CPP_MIN_LOG_LEVEL=1
 
-srun python code/modelling.py --input_directory data \
+srun python code/modelling.py --input_directory data/T2D_and_Alzheimer \
 --ancestry_val unspecified \
 --ancestry_test unspecified \
 --prediction_type drug_causes_side_effect \

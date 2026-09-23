@@ -39,7 +39,7 @@ srun python code/modelling.py --input_directory data/T2D_and_Alzheimer \
 --ancestry_val EAS \
 --ancestry_test AMR \
 --prediction_type variant_phenotype \
---output_directory output/output_var_phen_anc_focus \
+--output_directory output/output_var_phen_anc \
 --focus_test_relation False \
 --negative_sampling_mode source_aware \
 

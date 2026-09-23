@@ -430,13 +430,6 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
             losses.append(loss_rel)
             losses_by_rel[rel] = loss_rel
             metrics['/'.join(rel)] = met
-            if epoch % 5 == 0:
-                print(
-                    f"Relation {relation_name[rel]} | mode={neg_stats['sampling_mode']} | "
-                    f"n_sources={neg_stats['n_sources']} | avg_candidate_pool={neg_stats['candidate_pool_size_avg']:.1f} | "
-                    f"sampled_neg={neg_stats['sampled_negatives']} | mean_neg_per_source={neg_stats['mean_negatives_per_source']:.2f} | "
-                    f"confusion={met['confusion_matrix']}"
-                )
 
         use_domain_adv = rel_variant in supervised_relations
         if use_domain_adv:
@@ -491,17 +484,8 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
             if use_domain_adv:
                 msg += f"| dom_loss={dom_loss.item():.3f} "
             for rel in supervised_relations:
-                rel_key = '/'.join(rel)
-                stats = metrics[rel_key]['negative_sampling_stats']
-                msg += (
-                    f"| {relation_name[rel]} train_loss={losses_by_rel[rel].item():.3f} "
-                    f"AUROC={metrics[rel_key]['auroc']:.3f} AP={metrics[rel_key]['ap']:.3f} "
-                    f"n_pos={metrics[rel_key]['n_pos']} n_neg={metrics[rel_key]['n_neg']} "
-                    f"n_sources={stats['n_sources']} avg_pool={stats['candidate_pool_size_avg']:.1f} "
-                    f"mean_neg_per_source={stats['mean_negatives_per_source']:.2f} mode={stats['sampling_mode']}"
-                )
+                msg += f"| {relation_name[rel]} train_loss={losses_by_rel[rel].item():.3f}"
             print(msg)
-            # model.encoder.print_route_attention_summary(limit=None)
 
         if val_loss_total < best_val_loss - min_delta:
             best_val_loss = val_loss_total
@@ -553,8 +537,13 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
                 str(Path(OUTPUT) / f'{rel_key.replace("/", "_")}_test_roc.png'),
                 title=f'{rel_key} test ROC curve',
             )
-    print(f"VAL ({PREDICTION_TYPE}):", val)
-    print(f"TEST ({PREDICTION_TYPE}):", test)
+    print(f"TEST ({PREDICTION_TYPE}):")
+    for rel_key, results in test.items():
+        print(
+            f"{rel_key}: loss={results['loss']:.6f}, auroc={results['auroc']:.6f}, ap={results['ap']:.6f}, "
+            f"n_pos={results['n_pos']}, n_neg={results['n_neg']}, "
+            f"positive_scores={results['positive_scores']}, negative_scores={results['negative_scores']}"
+        )
     print("\n" + model.encoder.route_attention_report(
         title='Final HGT attended paths (all routes after training):',
         limit=None,
