@@ -180,6 +180,37 @@ def plot_roc_curve(pos_scores, neg_scores, output_path, title='ROC curve'):
     plt.close()
 
 
+def plot_pr_curve(pos_scores, neg_scores, output_path, title='Precision-recall curve'):
+    pos_scores = np.asarray(pos_scores).reshape(-1)
+    neg_scores = np.asarray(neg_scores).reshape(-1)
+    if pos_scores.size == 0 or neg_scores.size == 0:
+        return
+
+    scores = np.concatenate([pos_scores, neg_scores])
+    labels = np.concatenate([np.ones(len(pos_scores)), np.zeros(len(neg_scores))])
+    order = np.argsort(-scores, kind='stable')
+    labels = labels[order]
+    tp = np.cumsum(labels)
+    fp = np.cumsum(1 - labels)
+    precision = tp / (tp + fp)
+    recall = tp / labels.sum()
+    baseline = labels.mean()
+    ap_val = float(np.sum(np.diff(np.concatenate([[0.0], recall])) * precision))
+
+    plt.figure(figsize=(7, 7))
+    plt.plot(recall, precision, color='tab:blue', linewidth=2, label=f'AP = {ap_val:.3f}')
+    plt.axhline(baseline, linestyle='--', color='gray', linewidth=1, label=f'baseline = {baseline:.3f}')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.ylim(0, 1.02)
+    plt.title(title)
+    plt.legend(loc='best')
+    plt.grid(alpha=0.25)
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=200)
+    plt.close()
+
+
 def plot_training_history(history, output_dir):
 
     fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=False)

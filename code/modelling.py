@@ -14,7 +14,7 @@ from tools.load_node_data import node_data
 from tools.load_edge_data import edge_data
 from tools.create_nodes import nodes_init
 from tools.create_edges import edges_init
-from tools.viz import (audit_and_visualize_heterodata, plot_training_history, plot_score_histogram, plot_roc_curve)
+from tools.viz import (audit_and_visualize_heterodata, plot_training_history, plot_score_histogram, plot_roc_curve, plot_pr_curve)
 from tools.train_utils import (
     deduplicate_variant_phenotype_edges,
     deduplicate_drug_side_effect_edges,
@@ -387,7 +387,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
 
     patience = 10
     min_delta = 1e-4
-    best_val_loss = float('inf')
+    best_val_ap = float('-inf')
     patience_counter = 0
     best_model_path = f"{OUTPUT}/best_het_model.pt"
     history = {
@@ -463,6 +463,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
         with torch.no_grad():
             val_out = evaluate('val_mask', relations=test_relations if FOCUS_TEST_RELATION else supervised_relations)
             val_loss_total = sum(v['loss'] for v in val_out.values())
+            val_ap_mean = sum(v['ap'] for v in val_out.values()) / max(len(val_out), 1)
 
         epoch_time = time.perf_counter() - epoch_start
         history['epoch'].append(epoch)
@@ -473,8 +474,8 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
             rel_key = '/'.join(rel)
             history[f'{alias}_train_loss'].append(losses_by_rel[rel].item())
             history[f'{alias}_val_loss'].append(val_out[rel_key]['loss'])
-            history[f'{alias}_auroc'].append(metrics[rel_key]['auroc'])
-            history[f'{alias}_ap'].append(metrics[rel_key]['ap'])
+            history[f'{alias}_auroc'].append(val_out[rel_key]['auroc'])
+            history[f'{alias}_ap'].append(val_out[rel_key]['ap'])
         history['epoch_time'].append(epoch_time)
         history['lr'].append(opt.param_groups[0]['lr'])
         ###############################################################################
@@ -482,7 +483,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
         if epoch % 5 == 0:
             msg = (
                 f"Epoch {epoch:02d} | total_loss={total_loss.item():.3f} "
-                f"| val_loss={val_loss_total:.3f} "
+                f"| val_loss={val_loss_total:.3f} | val_ap={val_ap_mean:.3f} "
             )
             if use_domain_adv:
                 msg += f"| dom_loss={dom_loss.item():.3f} "
@@ -490,14 +491,14 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
                 msg += f"| {relation_name[rel]} train_loss={losses_by_rel[rel].item():.3f}"
             print(msg)
 
-        if val_loss_total < best_val_loss - min_delta:
-            best_val_loss = val_loss_total
+        if val_ap_mean > best_val_ap + min_delta:
+            best_val_ap = val_ap_mean
             patience_counter = 0
             torch.save(model.state_dict(), str(best_model_path))
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                print(f"Early stopping triggered at epoch {epoch}. Best validation loss: {best_val_loss:.3f}")
+                print(f"Early stopping triggered at epoch {epoch}. Best validation AP: {best_val_ap:.3f}")
                 break
 
     # Load the best performing model weights back into memory for final testing & inference
@@ -527,6 +528,12 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
                 str(Path(OUTPUT) / f'{rel_key.replace("/", "_")}_val_roc.png'),
                 title=f'{rel_key} validation ROC curve',
             )
+            plot_pr_curve(
+                results['positive_scores'],
+                results['negative_scores'],
+                str(Path(OUTPUT) / f'{rel_key.replace("/", "_")}_val_pr.png'),
+                title=f'{rel_key} validation PR curve',
+            )
     for rel_key, results in test.items():
         if 'positive_scores' in results and 'negative_scores' in results:
             plot_score_histogram(
@@ -541,10 +548,17 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
                 str(Path(OUTPUT) / f'{rel_key.replace("/", "_")}_test_roc.png'),
                 title=f'{rel_key} test ROC curve',
             )
+            plot_pr_curve(
+                results['positive_scores'],
+                results['negative_scores'],
+                str(Path(OUTPUT) / f'{rel_key.replace("/", "_")}_test_pr.png'),
+                title=f'{rel_key} test PR curve',
+            )
     print(f"VAL ({PREDICTION_TYPE}):")
     for rel_key, results in val.items():
         print(
             f"{rel_key}: loss={results['loss']:.6f}, auroc={results['auroc']:.6f}, ap={results['ap']:.6f}, "
+            f"baseline_ap={results['n_pos'] / max(results['n_pos'] + results['n_neg'], 1):.4f}, "
             f"best_threshold={results['best_threshold']:.4f}, precision={results['precision']:.4f}, recall={results['recall']:.4f}, f1={results['f1']:.4f}, "
             f"n_pos={results['n_pos']}, n_neg={results['n_neg']}"
         )
