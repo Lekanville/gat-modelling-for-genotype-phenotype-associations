@@ -9,7 +9,7 @@ def node_data(INPUT):
     # The node files
     drugs = f"{INPUT}/nodes/all_drug_features.csv"
     ancestry = f"{INPUT}/nodes/ancestry_nodes.csv"
-    clinical_outcomes = f"{INPUT}/nodes/clinical_outcomes_final_cui.csv"
+    clinical_outcomes = f"{INPUT}/nodes/clinical_outcomes_with_embedding.parquet"
     # clinical_outcomes = f"{INPUT}/nodes/phenotype_features.csv"
     genes = f"{INPUT}/nodes/genes_node_dedup_mapped.csv"
     pathway = f"{INPUT}/nodes/pathway_nodes.csv"
@@ -21,7 +21,7 @@ def node_data(INPUT):
     df_tissues = pd.read_csv(tissues)
     df_genes = pd.read_csv(genes)
     df_ancestry = pd.read_csv(ancestry)
-    df_clinical_outcomes = pd.read_csv(clinical_outcomes)
+    df_clinical_outcomes = pd.read_parquet(clinical_outcomes)
     df_pathway = pd.read_csv(pathway)
     df_drugs = pd.read_csv(drugs)
 
