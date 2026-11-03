@@ -9,7 +9,7 @@ def node_data(INPUT):
     # The node files
     drugs = f"{INPUT}/nodes/all_drug_features.csv"
     ancestry = f"{INPUT}/nodes/ancestry_nodes.csv"
-    clinical_outcomes = f"{INPUT}/nodes/clinical_outcomes_with_embedding.parquet"
+    clinical_outcomes = f"{INPUT}/nodes/clinical_outcomes_with_embeddings.parquet"
     # clinical_outcomes = f"{INPUT}/nodes/phenotype_features.csv"
     genes = f"{INPUT}/nodes/genes_node_dedup_mapped.csv"
     pathway = f"{INPUT}/nodes/pathway_nodes.csv"
