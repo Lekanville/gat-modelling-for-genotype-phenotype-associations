@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 def process_edge_data(df, src_col, dst_col, src_mapping, dst_mapping, weight_col=None):
     """
@@ -27,7 +27,8 @@ def process_edge_data(df, src_col, dst_col, src_mapping, dst_mapping, weight_col
 
 
 def edges_init(data, edge_dfs, mappings):
-    scaler = MinMaxScaler()
+    # scaler = MinMaxScaler()
+    scaler = StandardScaler()
 
     # Unpack edge dataframes
     (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_phenotype_causes,

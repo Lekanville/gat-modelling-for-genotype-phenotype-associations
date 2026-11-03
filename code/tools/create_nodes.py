@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from tools.smiles_features import smiles_to_feature_vector
 
 
@@ -79,7 +79,8 @@ from tools.smiles_features import smiles_to_feature_vector
 #     return (variant_to_idx, tissue_to_idx, gene_to_idx, ancestry_to_idx, pheno_to_idx, meddra_to_idx, pathway_to_idx, drug_to_idx, data)
 
 def nodes_init(data, df_variants, df_tissues, df_genes, df_ancestry, df_clinical_outcomes, df_pathway, df_drugs):
-    scaler = MinMaxScaler()
+    # scaler = MinMaxScaler()
+    scaler = StandardScaler()
     
     # Initialize Features & ID Mappings                  
     
@@ -138,8 +139,29 @@ def nodes_init(data, df_variants, df_tissues, df_genes, df_ancestry, df_clinical
     # --- CLINICAL OUTCOMES ---
     cui_codes = df_clinical_outcomes['cui'].tolist()
     clinical_outcomes_to_idx = {code: i for i, code in enumerate(cui_codes)}
-    cui_features_df = df_clinical_outcomes.drop(columns=['HPO_ID', 'cui', 'meddraCode', 'outcome', 'count', 'llr'])
-    data['clinical_outcome'].x = torch.tensor(cui_features_df.values, dtype=torch.float32)
+
+    # Keep the phenotype node features distinct from drug-side-effect edge weights.
+    # LLR is intentionally excluded here to avoid reusing the same association signal
+    # in both the node embedding and the edge-level relation strength.
+    embedding_series = df_clinical_outcomes['embedding'].dropna()
+    if embedding_series.empty:
+        raise ValueError("clinical_outcomes['embedding'] is empty; cannot build clinical_outcome node features.")
+
+    embedding_dim = len(np.asarray(embedding_series.iloc[0]))
+    embedding_matrix = np.vstack([
+        np.asarray(vec, dtype=np.float32).reshape(embedding_dim)
+        for vec in embedding_series
+    ])
+    if embedding_matrix.shape[0] != len(df_clinical_outcomes):
+        raise ValueError(
+            f"Clinical outcome embeddings are inconsistent: expected {len(df_clinical_outcomes)} rows, "
+            f"got {embedding_matrix.shape[0]}."
+        )
+
+    tabular_feature_cols = ["is_phenotype", "is_side_effect"]
+    tabular_data = df_clinical_outcomes[tabular_feature_cols].fillna(0).astype(np.float32)
+    final_feature_matrix = np.concatenate([embedding_matrix, tabular_data.values], axis=1)
+    data['clinical_outcome'].x = torch.tensor(final_feature_matrix, dtype=torch.float32)
 
     # --- PATHWAY NODES ---
     pathway_ids = df_pathway['Pathway_ID'].tolist()

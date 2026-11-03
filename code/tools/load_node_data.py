@@ -21,7 +21,7 @@ def node_data(INPUT):
     df_tissues = pd.read_csv(tissues)
     df_genes = pd.read_csv(genes)
     df_ancestry = pd.read_csv(ancestry)
-    df_clinical_outcomes = pd.read_parquet(clinical_outcomes)
+    df_clinical_outcomes = pd.read_parquet(clinical_outcomes, engine="fastparquet")
     df_pathway = pd.read_csv(pathway)
     df_drugs = pd.read_csv(drugs)
 
