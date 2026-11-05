@@ -31,11 +31,10 @@ def edges_init(data, edge_dfs, mappings):
     scaler = StandardScaler()
 
     # Unpack edge dataframes
-    (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_phenotype_causes,
-     df_drug_gene, df_gene_pathway, df_gene_phenotype, df_gene_tissue, 
-     df_phenotype_phenotype_lin, df_phenotypes_phenotypes_ldsc, df_tissue_phenotype,
-     df_variant_ancestry, df_variant_phenotype) = edge_dfs
-    
+    (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_drug_similarity, df_drug_gene,
+    df_drug_phenotype_causes, df_gene_pathway, df_gene_phenotype, df_gene_tissue, df_phenotype_phenotype_lin, 
+    df_phenotypes_phenotypes_ldsc, df_tissue_phenotype, df_variant_ancestry, df_variant_phenotype) = edge_dfs
+     
     # Unpack dictionaries for readability
     (variant_to_idx, tissue_to_idx, gene_to_idx, ancestry_to_idx, 
          clinical_outcomes_to_idx, pathway_to_idx, drug_to_idx) = mappings
@@ -67,7 +66,12 @@ def edges_init(data, edge_dfs, mappings):
     data['drug', 'causes', 'clinical_outcome'].edge_index = idx
     if w is not None: data['drug', 'causes', 'clinical_outcome'].edge_weight = w
 
-    # --- 5. Drug -> Gene ---
+    # --- 5. Drug -> Drug (Similarity) ---
+    idx, w = process_edge_data(df_drug_drug_similarity, 'source', 'target', drug_to_idx, drug_to_idx, weight_col='weight')
+    data['drug', 'similar_to', 'drug'].edge_index = idx
+    if w is not None: data['drug', 'similar_to', 'drug'].edge_weight = w
+
+    # --- 6. Drug -> Gene ---
     idx, w = process_edge_data(df_drug_gene, 'source', 'target', drug_to_idx, gene_to_idx, weight_col='weight_norm')
     type_cols = [c for c in df_drug_gene.columns if c.startswith('type_')]
     edge_attr = torch.tensor(df_drug_gene[type_cols].values, dtype=torch.float32)
@@ -75,41 +79,41 @@ def edges_init(data, edge_dfs, mappings):
     data['drug', 'targets', 'gene'].edge_weight = w
     data['drug', 'targets', 'gene'].edge_attr = edge_attr
 
-    # --- 6. Gene -> Pathway ---
+    # --- 7. Gene -> Pathway ---
     idx, w = process_edge_data(df_gene_pathway, 'Gene_Symbol', 'Pathway_ID', gene_to_idx, pathway_to_idx)
     data['gene', 'belongs_to', 'pathway'].edge_index = idx
 
-    # --- 7. Gene -> Clinical Outcome ---
+    # --- 8. Gene -> Clinical Outcome ---
     idx, w = process_edge_data(df_gene_phenotype, 'source', 'cui', gene_to_idx, clinical_outcomes_to_idx, weight_col='weight')
     data['gene', 'associated_with', 'clinical_outcome'].edge_index = idx
     if w is not None: data['gene', 'associated_with', 'clinical_outcome'].edge_weight = w
 
-    # --- 8. Gene -> Tissue ---
+    # --- 9. Gene -> Tissue ---
     idx, w = process_edge_data(df_gene_tissue, 'Gene_Symbol', 'Tissue_ID', gene_to_idx, tissue_to_idx, weight_col='Weight_Norm')
     data['gene', 'expressed_in', 'tissue'].edge_index = idx
     if w is not None: data['gene', 'expressed_in', 'tissue'].edge_weight = w
 
-    # --- 9. Clinical Outcome -> Clinical Outcome (Lin Similarity) ---
+    # --- 10. Clinical Outcome -> Clinical Outcome (Lin Similarity) ---
     idx, w = process_edge_data(df_phenotype_phenotype_lin, 'source_cui', 'target_cui', clinical_outcomes_to_idx, clinical_outcomes_to_idx, weight_col='lin_similarity')
     data['clinical_outcome', 'lin_similarity_with', 'clinical_outcome'].edge_index = idx
     if w is not None: data['clinical_outcome', 'lin_similarity_with', 'clinical_outcome'].edge_weight = w
 
-    # --- 10. Clinical Outcome -> Clinical Outcome (LDSC) ---
+    # --- 11. Clinical Outcome -> Clinical Outcome (LDSC) ---
     idx, w = process_edge_data(df_phenotypes_phenotypes_ldsc, 'source_cui', 'target_cui', clinical_outcomes_to_idx, clinical_outcomes_to_idx, weight_col='weight')
     data['clinical_outcome', 'genetically_correlated', 'clinical_outcome'].edge_index = idx
     if w is not None: data['clinical_outcome', 'genetically_correlated', 'clinical_outcome'].edge_weight = w
 
-    # --- 11. Tissue -> Clinical Outcome ---
+    # --- 12. Tissue -> Clinical Outcome ---
     idx, w = process_edge_data(df_tissue_phenotype, 'source_tissue', 'cui', tissue_to_idx, clinical_outcomes_to_idx, weight_col='weight_norm')
     data['tissue', 'enriched_for', 'clinical_outcome'].edge_index = idx
     if w is not None: data['tissue', 'enriched_for', 'clinical_outcome'].edge_weight = w
 
-    # --- 12. Variant -> Ancestry ---
+    # --- 13. Variant -> Ancestry ---
     idx, w = process_edge_data(df_variant_ancestry, 'rsid', 'target_ancestry', variant_to_idx, ancestry_to_idx)
     data['variant', 'observed_in', 'ancestry'].edge_index = idx
     # if w is not None: data['variant', 'observed_in', 'ancestry'].edge_weight = w
 
-    # --- 13. Variant -> Clinical Outcome ---
+    # --- 14. Variant -> Clinical Outcome ---
     idx, w = process_edge_data(df_variant_phenotype, 'rsid', 'cui', variant_to_idx, clinical_outcomes_to_idx, weight_col='magnitude')
     data['variant', 'associated_with', 'clinical_outcome'].edge_index = idx
     if w is not None: data['variant', 'associated_with', 'clinical_outcome'].edge_weight = w

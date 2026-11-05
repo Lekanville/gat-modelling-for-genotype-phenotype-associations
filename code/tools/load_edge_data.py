@@ -18,7 +18,7 @@ def edge_data(INPUT):
     gene_phenotype = f"{INPUT}/edges/gene_phenotype_edges_cui.csv"
     gene_tissue = f"{INPUT}/edges/gene_tissue_edges_final.csv"
     phenotype_phenotype_ldsc = f"{INPUT}/edges/phenotype_phenotype_edges_ldsc_cui.csv"
-    phenotype_phenotype_lin = f"{INPUT}/edges/phenotype_phenotype_edges_lin_cui.csv"
+    phenotype_phenotype_lin = f"{INPUT}/edges/phenotype_phenotype_edges_lin_cui_all.csv"
     tissue_phenotype = f"{INPUT}/edges/tissue_phenotype_edges_cui.csv"
     variant_ancestry = f"{INPUT}/edges/va_final.csv"
     variant_phenotype = f"{INPUT}/edges/variant_phenotype_edges_cui.csv"
