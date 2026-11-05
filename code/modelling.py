@@ -97,7 +97,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
     
 
     # The edge data 
-    (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_phenotype_causes, df_drug_gene, df_gene_pathway, 
+    (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_drug_similarity, df_drug_phenotype_causes, df_drug_gene, df_gene_pathway, 
         df_gene_phenotype, df_gene_tissue, df_phenotype_phenotype_lin, df_phenotypes_phenotypes_ldsc, df_tissue_phenotype,
             df_variant_ancestry, df_variant_phenotype) = edge_data(INPUT)
 
@@ -177,9 +177,9 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
                 train_label='train',
             )
 
-    edge_dfs = (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_phenotype_causes, df_drug_gene, df_gene_pathway, 
-                    df_gene_phenotype, df_gene_tissue, df_phenotype_phenotype_lin, df_phenotypes_phenotypes_ldsc, df_tissue_phenotype,
-                        df_variant_ancestry, df_variant_phenotype) 
+    edge_dfs = (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_drug_similarity, df_drug_gene,
+                 df_drug_phenotype_causes, df_gene_pathway, df_gene_phenotype, df_gene_tissue, df_phenotype_phenotype_lin, 
+                 df_phenotypes_phenotypes_ldsc, df_tissue_phenotype, df_variant_ancestry, df_variant_phenotype) 
 
 
     # Initialize Features & ID Mappings 
