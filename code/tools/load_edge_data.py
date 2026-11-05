@@ -40,6 +40,6 @@ def edge_data(INPUT):
     df_variant_ancestry = pd.read_csv(variant_ancestry)
     df_variant_phenotype = pd.read_csv(variant_phenotype)
 
-    return (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_drug_similarity, df_drug_gene, df_drug_phenotype_causes, df_gene_pathway, 
-            df_gene_phenotype, df_gene_tissue, df_phenotypes_phenotypes_ldsc, df_phenotype_phenotype_lin, df_tissue_phenotype,
-            df_variant_ancestry, df_variant_phenotype)
+    return (df_ancestry_phenotype, df_gene_gene, df_variant_gene, df_drug_phenotype_treats, df_drug_drug_similarity, df_drug_gene, 
+            df_drug_phenotype_causes, df_gene_pathway, df_gene_phenotype, df_gene_tissue, df_phenotypes_phenotypes_ldsc, 
+            df_phenotype_phenotype_lin, df_tissue_phenotype, df_variant_ancestry, df_variant_phenotype)
