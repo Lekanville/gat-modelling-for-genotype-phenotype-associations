@@ -12,9 +12,122 @@ from torchmetrics.classification import BinaryAUROC, BinaryAveragePrecision
 
 # Initialize metrics globally once
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+TOPK_K_VALUES = (50, 100, 500, 1000, 2500)
 bce = nn.BCEWithLogitsLoss()
 auroc = BinaryAUROC().to(device)
 ap = BinaryAveragePrecision().to(device)
+
+
+def compute_topk_ranking_metrics(pos_scores, neg_scores, ks=TOPK_K_VALUES):
+    """Compute Precision@K, Recall@K and Lift@K for a binary ranking task."""
+    pos_scores = pos_scores.float().reshape(-1)
+    neg_scores = neg_scores.float().reshape(-1)
+    if pos_scores.numel() == 0 or neg_scores.numel() == 0:
+        out = {}
+        for k in ks:
+            out[f'precision@{k}'] = 0.0
+            out[f'recall@{k}'] = 0.0
+            out[f'lift@{k}'] = 0.0
+        return out
+
+    scores = torch.cat([pos_scores, neg_scores])
+    labels = torch.cat([
+        torch.ones_like(pos_scores, dtype=torch.long),
+        torch.zeros_like(neg_scores, dtype=torch.long),
+    ])
+    total_pos = int(labels.sum().item())
+    total_items = int(scores.numel())
+    baseline_rate = total_pos / max(total_items, 1)
+
+    ranking = torch.argsort(scores, descending=True)
+    sorted_labels = labels[ranking]
+    out = {}
+    for k in ks:
+        k_eff = min(int(k), int(sorted_labels.numel()))
+        if k_eff <= 0:
+            out[f'precision@{k}'] = 0.0
+            out[f'recall@{k}'] = 0.0
+            out[f'lift@{k}'] = 0.0
+            continue
+        top_labels = sorted_labels[:k_eff]
+        tp = int(top_labels.sum().item())
+        precision = tp / k_eff
+        recall = tp / max(total_pos, 1)
+        lift = (precision / max(baseline_rate, 1e-12))
+        out[f'precision@{k}'] = float(precision)
+        out[f'recall@{k}'] = float(recall)
+        out[f'lift@{k}'] = float(lift)
+    return out
+
+
+def compute_topk_coverage_summary(pos_edges, neg_edges, pos_scores, neg_scores, ks=TOPK_K_VALUES):
+    """Coverage summary for drug-level ranking. For each source in the evaluation set,
+    report whether at least one true positive appears in the top-k candidates, and count
+    the unique positive outcomes recovered across the whole evaluation pool."""
+    pos_edges = pos_edges.to(torch.long)
+    neg_edges = neg_edges.to(torch.long)
+    pos_scores = pos_scores.float().reshape(-1)
+    neg_scores = neg_scores.float().reshape(-1)
+
+    if pos_edges.numel() == 0:
+        return {
+            'n_test_drugs': 0,
+            'n_unique_outcomes': 0,
+            'unique_outcomes_recovered_topk': {f'k={k}': 0 for k in ks},
+            'percent_drugs_with_true_positive_in_topk': {f'k={k}': 0.0 for k in ks},
+        }
+
+    unique_sources = sorted(set(pos_edges[0].tolist()) | set(neg_edges[0].tolist()))
+    total_drugs = len(unique_sources)
+    unique_outcomes = set(pos_edges[1].tolist())
+
+    summary = {
+        'n_test_drugs': int(total_drugs),
+        'n_unique_outcomes': int(len(unique_outcomes)),
+    }
+
+    for k in ks:
+        recovered_outcomes = set()
+        drugs_with_hit = 0
+        for src in unique_sources:
+            src_pos_mask = pos_edges[0] == src
+            src_neg_mask = neg_edges[0] == src
+            if src_pos_mask.any():
+                src_pos_edges = pos_edges[:, src_pos_mask]
+                src_pos_scores = pos_scores[src_pos_mask]
+            else:
+                src_pos_edges = torch.empty((2, 0), dtype=torch.long, device=pos_edges.device)
+                src_pos_scores = torch.empty((0,), dtype=torch.float32, device=pos_scores.device)
+            if src_neg_mask.any():
+                src_neg_edges = neg_edges[:, src_neg_mask]
+                src_neg_scores = neg_scores[src_neg_mask]
+            else:
+                src_neg_edges = torch.empty((2, 0), dtype=torch.long, device=neg_edges.device)
+                src_neg_scores = torch.empty((0,), dtype=torch.float32, device=neg_scores.device)
+
+            combined_edges = torch.cat([src_pos_edges, src_neg_edges], dim=1) if src_pos_edges.numel() + src_neg_edges.numel() > 0 else torch.empty((2, 0), dtype=torch.long, device=pos_edges.device)
+            combined_scores = torch.cat([src_pos_scores, src_neg_scores], dim=0) if src_pos_scores.numel() + src_neg_scores.numel() > 0 else torch.empty((0,), dtype=torch.float32, device=pos_scores.device)
+            combined_labels = torch.cat([
+                torch.ones(src_pos_scores.numel(), dtype=torch.long, device=pos_scores.device),
+                torch.zeros(src_neg_scores.numel(), dtype=torch.long, device=neg_scores.device),
+            ]) if combined_scores.numel() > 0 else torch.empty((0,), dtype=torch.long, device=pos_scores.device)
+
+            if combined_scores.numel() == 0:
+                continue
+
+            top_idx = torch.argsort(combined_scores, descending=True)[:min(int(k), combined_scores.numel())]
+            top_labels = combined_labels[top_idx]
+            top_outcomes = combined_edges[1, top_idx]
+            if int(top_labels.sum().item()) > 0:
+                drugs_with_hit += 1
+                recovered_outcomes.update(top_outcomes[top_labels == 1].tolist())
+
+        summary[f'precision@{k}'] = 0.0
+        summary[f'recall@{k}'] = 0.0
+        summary[f'lift@{k}'] = 0.0
+        summary[f'unique_outcomes_recovered_top{k}'] = int(len(recovered_outcomes))
+        summary[f'percent_drugs_with_true_positive_in_top{k}'] = float(drugs_with_hit / max(total_drugs, 1) * 100.0)
+    return summary
 
 def deduplicate_variant_phenotype_edges(df_variant_phenotype):
     """Keep the strongest edge per variant-phenotype pair to avoid ancestry-row duplication."""
@@ -280,8 +393,10 @@ def edge_loss_and_metrics(model, z, rel, pos, neg, threshold=None):
             f1 = 2.0 * precision * recall / max(precision + recall, 1e-12)
 
         conf_matrix = compute_confusion_matrix(logits, y, threshold=selected_threshold)
+        topk_metrics = compute_topk_ranking_metrics(pos_logit, neg_logit, ks=TOPK_K_VALUES)
+        coverage_summary = compute_topk_coverage_summary(pos, neg, pos_logit, neg_logit, ks=TOPK_K_VALUES)
 
-    return loss, {
+    result = {
         'auroc': auroc_val,
         'ap': ap_val,
         'n_pos': int(pos.size(1)),
@@ -293,4 +408,11 @@ def edge_loss_and_metrics(model, z, rel, pos, neg, threshold=None):
         'precision': float(precision),
         'recall': float(recall),
         'f1': float(f1),
+        'n_test_drugs': int(coverage_summary.get('n_test_drugs', 0)),
+        'n_unique_outcomes': int(coverage_summary.get('n_unique_outcomes', 0)),
     }
+    result.update(topk_metrics)
+    for k in TOPK_K_VALUES:
+        result[f'unique_outcomes_recovered_top{k}'] = int(coverage_summary.get(f'unique_outcomes_recovered_top{k}', 0))
+        result[f'percent_drugs_with_true_positive_in_top{k}'] = float(coverage_summary.get(f'percent_drugs_with_true_positive_in_top{k}', 0.0))
+    return loss, result
