@@ -387,6 +387,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
 
     patience = 10
     min_delta = 1e-4
+    best_val_loss = float('inf')
     best_val_ap = float('-inf')
     patience_counter = 0
     best_model_path = f"{OUTPUT}/best_het_model.pt"
@@ -491,14 +492,18 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
                 msg += f"| {relation_name[rel]} train_loss={losses_by_rel[rel].item():.3f}"
             print(msg)
 
-        if val_ap_mean > best_val_ap + min_delta:
+        if val_loss_total < best_val_loss - min_delta:
+            best_val_loss = val_loss_total
             best_val_ap = val_ap_mean
             patience_counter = 0
             torch.save(model.state_dict(), str(best_model_path))
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                print(f"Early stopping triggered at epoch {epoch}. Best validation AP: {best_val_ap:.3f}")
+                print(
+                    f"Early stopping triggered at epoch {epoch}. "
+                    f"Best validation loss: {best_val_loss:.3f}, best validation AP: {best_val_ap:.3f}"
+                )
                 break
 
     # Load the best performing model weights back into memory for final testing & inference
