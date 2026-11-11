@@ -567,7 +567,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
             f"best_threshold={results['best_threshold']:.4f}, precision={results['precision']:.4f}, recall={results['recall']:.4f}, f1={results['f1']:.4f}, "
             f"n_pos={results['n_pos']}, n_neg={results['n_neg']}"
         )
-        for k in (50, 100, 500, 1000, 2500):
+        for k in (10, 50, 100, 500, 1000, 2500):
             print(
                 f"  top-k metrics: P@{k}={results[f'precision@{k}']:.4f}, "
                 f"R@{k}={results[f'recall@{k}']:.4f}, L@{k}={results[f'lift@{k}']:.4f}, "
@@ -582,7 +582,7 @@ def gat_modelling(INPUT, ANCESTRY_TEST, ANCESTRY_VAL, OUTPUT, PREDICTION_TYPE, I
             f"n_pos={results['n_pos']}, n_neg={results['n_neg']}, "
             f"positive_scores={results['positive_scores']}, negative_scores={results['negative_scores']}"
         )
-        for k in (50, 100, 500, 1000, 2500):
+        for k in (10, 50, 100, 500, 1000, 2500):
             print(
                 f"  top-k metrics: P@{k}={results[f'precision@{k}']:.4f}, "
                 f"R@{k}={results[f'recall@{k}']:.4f}, L@{k}={results[f'lift@{k}']:.4f}, "

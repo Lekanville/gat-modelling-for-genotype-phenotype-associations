@@ -12,7 +12,7 @@ from torchmetrics.classification import BinaryAUROC, BinaryAveragePrecision
 
 # Initialize metrics globally once
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-TOPK_K_VALUES = (50, 100, 500, 1000, 2500)
+TOPK_K_VALUES = (10, 50, 100, 500, 1000, 2500)
 bce = nn.BCEWithLogitsLoss()
 auroc = BinaryAUROC().to(device)
 ap = BinaryAveragePrecision().to(device)
